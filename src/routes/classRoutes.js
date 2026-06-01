@@ -2,6 +2,7 @@ const express = require('express')
 const {
   createClass,
   listClasses,
+  listClassOptions,
   listClassStudents,
   updateClass,
   updateClassStatus,
@@ -12,6 +13,7 @@ const router = express.Router()
 
 router.use(requireAuth)
 router.get('/', listClasses)
+router.get('/options', listClassOptions)
 router.post('/', createClass)
 router.get('/:id/students', listClassStudents)
 router.put('/:id', updateClass)

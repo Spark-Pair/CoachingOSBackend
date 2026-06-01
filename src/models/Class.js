@@ -8,11 +8,6 @@ const classSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
-    sortOrder: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
     status: {
       type: String,
       enum: ['Active', 'Inactive'],
@@ -22,6 +17,6 @@ const classSchema = new mongoose.Schema(
   { timestamps: true },
 )
 
-classSchema.index({ sortOrder: 1, name: 1 })
+classSchema.index({ name: 1 })
 
 module.exports = mongoose.model('Class', classSchema)

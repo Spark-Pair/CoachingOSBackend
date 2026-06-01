@@ -35,7 +35,7 @@ async function listClasses(req, res) {
 
   const [total, classes, activeCount, inactiveCount, allClasses] = await Promise.all([
     Class.countDocuments(filter),
-    Class.find(filter).sort({ sortOrder: 1, name: 1 }).skip((page - 1) * CLASS_PAGE_SIZE).limit(CLASS_PAGE_SIZE).lean(),
+    Class.find(filter).sort({ name: 1 }).skip((page - 1) * CLASS_PAGE_SIZE).limit(CLASS_PAGE_SIZE).lean(),
     Class.countDocuments({ status: 'Active' }),
     Class.countDocuments({ status: 'Inactive' }),
     Class.find({}).select('_id name').lean(),
@@ -47,11 +47,17 @@ async function listClasses(req, res) {
   ])
 
   return res.json({
-    data: classes.map((classItem, index) => ({
-      ...classItem,
-      id: classItem._id,
-      studentCount: studentCounts[index],
-    })),
+    data: classes.map((classItem, index) => {
+      // Older documents may still contain legacy fields (e.g. sortOrder).
+      // Keep the API response stable and only return what the app uses.
+      // eslint-disable-next-line no-unused-vars
+      const { sortOrder, ...safeClass } = classItem
+      return {
+        ...safeClass,
+        id: classItem._id,
+        studentCount: studentCounts[index],
+      }
+    }),
     pagination: {
       page,
       pageSize: CLASS_PAGE_SIZE,
@@ -69,15 +75,14 @@ async function listClasses(req, res) {
 
 async function createClass(req, res) {
   const name = String(req.body.name || '').trim()
-  const sortOrder = Number(req.body.sortOrder)
   const status = buildStatusFilter(req.body.status) || 'Active'
 
-  if (!name || !Number.isInteger(sortOrder) || sortOrder < 1) {
-    return res.status(400).json({ message: 'Class name and a valid sort order are required.' })
+  if (!name) {
+    return res.status(400).json({ message: 'Class name is required.' })
   }
 
   try {
-    const classItem = await Class.create({ name, sortOrder, status })
+    const classItem = await Class.create({ name, status })
     return res.status(201).json({ ...classItem.toObject(), id: classItem._id, studentCount: 0 })
   } catch (error) {
     if (error.code === 11000) {
@@ -93,17 +98,15 @@ async function updateClass(req, res) {
   }
 
   const name = String(req.body.name || '').trim()
-  const sortOrder = Number(req.body.sortOrder)
-  const status = buildStatusFilter(req.body.status)
 
-  if (!name || !Number.isInteger(sortOrder) || sortOrder < 1 || !status) {
-    return res.status(400).json({ message: 'Class name, sort order, and status are required.' })
+  if (!name) {
+    return res.status(400).json({ message: 'Class name is required.' })
   }
 
   try {
     const classItem = await Class.findByIdAndUpdate(
       req.params.id,
-      { name, sortOrder, status },
+      { name },
       { new: true, runValidators: true },
     )
     if (!classItem) {
@@ -185,9 +188,17 @@ async function listClassStudents(req, res) {
   })
 }
 
+async function listClassOptions(_req, res) {
+  const classes = await Class.find({}).sort({ name: 1 }).select('_id name status').lean()
+  return res.json({
+    data: classes.map((classItem) => ({ id: classItem._id, name: classItem.name, status: classItem.status })),
+  })
+}
+
 module.exports = {
   createClass,
   listClasses,
+  listClassOptions,
   listClassStudents,
   updateClass,
   updateClassStatus,
