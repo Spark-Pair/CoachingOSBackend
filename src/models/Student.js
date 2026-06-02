@@ -14,7 +14,6 @@ const studentSchema = new mongoose.Schema(
       enum: ['Active', 'Inactive'],
       default: 'Active',
     },
-    photoPath: { type: String, trim: true },
   },
   { timestamps: true },
 )

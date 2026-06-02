@@ -23,12 +23,6 @@ function buildDate(value) {
   return Number.isNaN(date.getTime()) ? undefined : date
 }
 
-function getPhotoPathFromUpload(file) {
-  if (!file) return undefined
-  // Exposed under /uploads via express.static
-  return `/uploads/students/${file.filename}`
-}
-
 async function listStudents(req, res) {
   const page = getPage(req.query.page)
   const status = buildStatusFilter(req.query.status)
@@ -88,10 +82,9 @@ async function createStudent(req, res) {
   const classId = String(req.body.classId || '').trim()
   const monthlyFee = Number(req.body.monthlyFee)
   const joiningDate = buildDate(req.body.joiningDate)
-  const photoPath = getPhotoPathFromUpload(req.file)
 
   if (!name || !parentName || !rollNo || !classId || !mongoose.isValidObjectId(classId) || !joiningDate || !Number.isFinite(monthlyFee)) {
-    return res.status(400).json({ message: 'All fields are required (image is optional).' })
+    return res.status(400).json({ message: 'All fields are required.' })
   }
 
   const classItem = await Class.findById(classId).select('name status').lean()
@@ -112,7 +105,6 @@ async function createStudent(req, res) {
       monthlyFee,
       joiningDate,
       status: 'Active',
-      ...(photoPath ? { photoPath } : {}),
     })
     return res.status(201).json({ ...student.toObject(), id: student._id })
   } catch (error) {
@@ -137,10 +129,9 @@ async function updateStudent(req, res) {
   const classId = String(req.body.classId || '').trim()
   const monthlyFee = Number(req.body.monthlyFee)
   const joiningDate = buildDate(req.body.joiningDate)
-  const photoPath = getPhotoPathFromUpload(req.file)
 
   if (!name || !parentName || !rollNo || !classId || !mongoose.isValidObjectId(classId) || !joiningDate || !Number.isFinite(monthlyFee)) {
-    return res.status(400).json({ message: 'All fields are required (image is optional).' })
+    return res.status(400).json({ message: 'All fields are required.' })
   }
 
   const classItem = await Class.findById(classId).select('name status').lean()
@@ -159,7 +150,6 @@ async function updateStudent(req, res) {
         className: classItem.name,
         monthlyFee,
         joiningDate,
-        ...(photoPath ? { photoPath } : {}),
       },
       { new: true, runValidators: true },
     )
