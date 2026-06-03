@@ -75,6 +75,17 @@ async function listStudents(req, res) {
   })
 }
 
+async function listStudentOptions(_req, res) {
+  const students = await Student.find({})
+    .sort({ name: 1 })
+    .select('_id name rollNo classId className monthlyFee joiningDate status')
+    .lean()
+
+  return res.json({
+    data: students.map((student) => ({ ...student, id: student._id })),
+  })
+}
+
 async function createStudent(req, res) {
   const name = String(req.body.name || '').trim()
   const parentName = String(req.body.parentName || '').trim()
@@ -193,6 +204,7 @@ async function updateStudentStatus(req, res) {
 
 module.exports = {
   createStudent,
+  listStudentOptions,
   listStudents,
   updateStudent,
   updateStudentStatus,

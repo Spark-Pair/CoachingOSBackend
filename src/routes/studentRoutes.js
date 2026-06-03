@@ -1,6 +1,7 @@
 const express = require('express')
 const {
   createStudent,
+  listStudentOptions,
   listStudents,
   updateStudent,
   updateStudentStatus,
@@ -12,6 +13,7 @@ const router = express.Router()
 router.use(requireAuth)
 
 router.get('/', listStudents)
+router.get('/options', listStudentOptions)
 router.post('/', createStudent)
 router.put('/:id', updateStudent)
 router.patch('/:id/status', updateStudentStatus)

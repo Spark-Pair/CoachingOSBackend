@@ -203,6 +203,7 @@ async function scanAttendance(req, res) {
   }
 
   const existingRecord = attendanceDay.records.find((record) => record.studentId.toString() === student._id.toString())
+  const alreadyMarked = Boolean(existingRecord?.status === 'Present')
   if (existingRecord) {
     existingRecord.status = 'Present'
     existingRecord.markedAt = new Date()
@@ -217,6 +218,7 @@ async function scanAttendance(req, res) {
     date: effectiveDate,
     status: 'Present',
     markedBy,
+    alreadyMarked,
   })
 }
 
