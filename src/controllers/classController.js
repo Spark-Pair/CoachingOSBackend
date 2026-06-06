@@ -18,15 +18,17 @@ function buildStatusFilter(status) {
   return ['Active', 'Inactive'].includes(status) ? status : undefined
 }
 
-async function studentCountForClass(classItem) {
+async function studentCountForClass(classItem, status) {
   return Student.countDocuments({
     $or: [{ classId: classItem._id }, { classId: null, className: classItem.name }],
+    ...(status ? { status } : {}),
   })
 }
 
 async function listClasses(req, res) {
   const page = getPage(req.query.page)
   const status = buildStatusFilter(req.query.status)
+  const studentStatus = buildStatusFilter(req.query.studentStatus)
   const search = String(req.query.search || '').trim()
   const filter = {
     ...(status ? { status } : {}),
@@ -42,8 +44,8 @@ async function listClasses(req, res) {
   ])
 
   const [studentCounts, assignedStudentCounts] = await Promise.all([
-    Promise.all(classes.map(studentCountForClass)),
-    Promise.all(allClasses.map(studentCountForClass)),
+    Promise.all(classes.map((classItem) => studentCountForClass(classItem, studentStatus))),
+    Promise.all(allClasses.map((classItem) => studentCountForClass(classItem, studentStatus))),
   ])
 
   return res.json({

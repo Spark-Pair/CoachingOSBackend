@@ -5,6 +5,7 @@ const studentSchema = new mongoose.Schema(
     rollNo: { type: String, trim: true, required: true },
     name: { type: String, required: true, trim: true },
     parentName: { type: String, trim: true, required: true },
+    phone: { type: String, trim: true, required: true },
     classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true, required: true },
     className: { type: String, trim: true, required: true },
     monthlyFee: { type: Number, min: 0, required: true },

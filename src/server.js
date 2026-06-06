@@ -7,6 +7,7 @@ const attendanceRoutes = require('./routes/attendanceRoutes')
 const authRoutes = require('./routes/authRoutes')
 const classRoutes = require('./routes/classRoutes')
 const feeRoutes = require('./routes/feeRoutes')
+const reportRoutes = require('./routes/reportRoutes')
 const studentRoutes = require('./routes/studentRoutes')
 
 const app = express()
@@ -43,6 +44,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/attendance', attendanceRoutes)
 app.use('/api/classes', classRoutes)
 app.use('/api/fees', feeRoutes)
+app.use('/api/reports', reportRoutes)
 app.use('/api/students', studentRoutes)
 
 app.use((err, _req, res, _next) => {
