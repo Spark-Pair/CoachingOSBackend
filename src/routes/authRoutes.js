@@ -2,6 +2,7 @@ const express = require('express')
 const {
   getSession,
   getSetupStatus,
+  getSubscription,
   login,
   registerPin,
   resetPin,
@@ -14,6 +15,7 @@ router.get('/setup-status', getSetupStatus)
 router.post('/register', registerPin)
 router.post('/login', login)
 router.get('/session', requireAuth, getSession)
+router.get('/subscription', requireAuth, getSubscription)
 router.post('/reset-pin', requireAuth, resetPin)
 
 module.exports = router

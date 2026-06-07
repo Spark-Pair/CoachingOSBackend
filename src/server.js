@@ -1,4 +1,9 @@
-require('dotenv').config()
+const fs = require('fs')
+const path = require('path')
+const environmentPath = fs.existsSync(path.join(process.cwd(), '.env'))
+  ? path.join(process.cwd(), '.env')
+  : path.join(process.cwd(), 'config.env')
+require('dotenv').config({ path: environmentPath })
 
 const cors = require('cors')
 const express = require('express')
@@ -6,6 +11,7 @@ const connectDb = require('./config/db')
 const attendanceRoutes = require('./routes/attendanceRoutes')
 const authRoutes = require('./routes/authRoutes')
 const classRoutes = require('./routes/classRoutes')
+const dashboardRoutes = require('./routes/dashboardRoutes')
 const feeRoutes = require('./routes/feeRoutes')
 const reportRoutes = require('./routes/reportRoutes')
 const studentRoutes = require('./routes/studentRoutes')
@@ -43,9 +49,23 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/attendance', attendanceRoutes)
 app.use('/api/classes', classRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/fees', feeRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/students', studentRoutes)
+
+const frontendDirectory = path.resolve(process.env.FRONTEND_DIR || path.join(process.cwd(), 'frontend'))
+const frontendIndex = path.join(frontendDirectory, 'index.html')
+
+if (fs.existsSync(frontendIndex)) {
+  app.use(express.static(frontendDirectory))
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+      return res.sendFile(frontendIndex)
+    }
+    return next()
+  })
+}
 
 app.use((err, _req, res, _next) => {
   console.error(err)

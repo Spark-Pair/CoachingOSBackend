@@ -1,0 +1,7 @@
+{
+  "main": "C:\\Software\\CoachingOS\\CoachingOSBackend\\build\\backend-bundle.cjs",
+  "output": "C:\\Software\\CoachingOS\\CoachingOSBackend\\build\\coachingos-sea.blob",
+  "disableExperimentalSEAWarning": true,
+  "useSnapshot": false,
+  "useCodeCache": false
+}

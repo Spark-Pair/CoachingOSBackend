@@ -1,0 +1,197 @@
+COACHINGOS - OFFLINE WINDOWS INSTALLATION
+========================================
+
+PACKAGE CONTENTS
+----------------
+CoachingOS\
+  CoachingOS.exe
+  config.env
+  Start CoachingOS.bat
+  Install License.bat
+  INSTALLATION GUIDE.txt
+  frontend\
+    index.html
+    assets\
+
+Do not remove or rename the frontend folder.
+
+
+1. INSTALL MONGODB COMMUNITY SERVER
+-----------------------------------
+Install MongoDB Community Server on the client's Windows PC.
+
+During MongoDB setup:
+- Choose Complete installation.
+- Install MongoDB as a Windows Service.
+- Keep the default service name: MongoDB.
+- Start the service automatically.
+- MongoDB Compass is optional.
+
+The application expects:
+
+mongodb://127.0.0.1:27017/coachingos
+
+Verify the service:
+1. Press Win + R.
+2. Enter: services.msc
+3. Find MongoDB Server.
+4. Its status must be Running.
+
+
+2. COPY THE APPLICATION
+-----------------------
+Copy the complete LocalInstallation folder to a permanent location, for example:
+
+C:\CoachingOS
+
+The final structure must be:
+
+C:\CoachingOS\
+  CoachingOS.exe
+  config.env
+  Start CoachingOS.bat
+  Install License.bat
+  INSTALLATION GUIDE.txt
+  frontend\
+    index.html
+    assets\
+
+Do not run the application from a temporary ZIP extraction directory.
+
+
+3. CONFIGURE config.env
+-----------------
+Open C:\CoachingOS\config.env in Notepad.
+
+The release builder already generates a unique JWT_SECRET. Do not reuse this
+config.env file for another customer installation.
+
+For a normal single-PC installation, keep:
+
+MONGO_URI=mongodb://127.0.0.1:27017/coachingos
+PORT=5000
+HOST=127.0.0.1
+FRONTEND_DIR=frontend
+
+To use MongoDB Atlas instead, replace only MONGO_URI with the Atlas connection
+string, for example:
+
+MONGO_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER.mongodb.net/coachingos
+
+Atlas requires internet access. Add the client's current public IP address to
+the Atlas Network Access list, or configure the appropriate Atlas access rule.
+The database user must have permission to read and write the coachingos
+database.
+
+
+4. INSTALL THE CUSTOMER LICENSE
+-------------------------------
+The developer provides a signed file ending in .license.json.
+
+Method A:
+- Drag the license file onto Install License.bat.
+
+Method B:
+- Create C:\ProgramData\CoachingOS
+- Copy the license into that folder.
+- Rename it to license.json
+
+Expected location:
+
+C:\ProgramData\CoachingOS\license.json
+
+The license is outside MongoDB and the application folder. Resetting the
+database or replacing C:\CoachingOS does not reset the expiry date.
+
+
+5. START THE APPLICATION
+------------------------
+Double-click:
+
+Start CoachingOS.bat
+
+The application opens at:
+
+http://127.0.0.1:5000
+
+On first use, register the four-digit administrator PIN.
+
+
+6. OPTIONAL DESKTOP SHORTCUT
+----------------------------
+Right-click Start CoachingOS.bat and choose:
+
+Send to > Desktop (create shortcut)
+
+Rename the shortcut to CoachingOS.
+
+
+7. BACKUP
+---------
+Application data is stored in the local MongoDB database named coachingos.
+
+Back up with:
+
+mongodump --db coachingos --out C:\CoachingOS-Backup
+
+Restore with:
+
+mongorestore --drop --db coachingos C:\CoachingOS-Backup\coachingos
+
+MongoDB Database Tools may need to be installed separately.
+
+Also retain a secure copy of the signed customer license.
+
+
+8. RENEWING THE LICENSE
+-----------------------
+The developer creates a new signed license with the new expiry date.
+
+Close CoachingOS.
+Drag the new license onto Install License.bat.
+Start CoachingOS again.
+
+Do not edit license.json. Any modification invalidates its signature.
+
+
+9. TROUBLESHOOTING
+------------------
+License is missing
+- Check C:\ProgramData\CoachingOS\license.json.
+
+License is invalid
+- Reinstall the original signed license.
+- Do not edit it in Notepad.
+
+Subscription expired
+- Request a renewed license from the developer.
+
+System date/time changed
+- Correct the Windows date and time.
+- If it remains blocked, contact the developer.
+
+MongoDB connection error
+- Open services.msc.
+- Start MongoDB Server.
+- Confirm MONGO_URI is mongodb://127.0.0.1:27017/coachingos
+
+MongoDB Atlas connection error
+- Confirm the PC has internet and DNS access.
+- Confirm the Atlas connection string, username, and password.
+- Confirm the client's public IP is allowed by Atlas Network Access.
+- If the password contains special characters, URL-encode them.
+
+Page does not open
+- Wait five seconds and open http://127.0.0.1:5000
+- Ensure only one CoachingOS.exe process is running.
+
+
+10. FULLY OFFLINE OPERATION
+---------------------------
+After MongoDB, the application folder, and license are installed, CoachingOS
+does not require internet access.
+
+For fully offline operation, use the local MongoDB connection string.
+MongoDB Atlas is also supported by setting its connection string in config.env,
+but Atlas naturally requires an internet connection.
+
