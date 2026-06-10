@@ -1,7 +1,5 @@
 param(
-  [Parameter(Mandatory = $true)]
-  [ValidatePattern('^\d+\.\d+\.\d+$')]
-  [string]$Version,
+  [string]$Version = '',
 
   [ValidateSet('optional', 'mandatory')]
   [string]$UpdateType = 'optional',
@@ -12,6 +10,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+  throw 'Version must contain three numbers separated by dots, for example 1.2.0.'
+}
 
 $backendRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workspaceRoot = (Resolve-Path (Join-Path $backendRoot '..')).Path
