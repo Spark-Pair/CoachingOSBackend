@@ -298,5 +298,6 @@ module.exports = {
   checkForUpdate,
   compareVersions,
   getCurrentVersion,
+  isInstallSupported,
   prepareAndLaunchUpdate,
 }

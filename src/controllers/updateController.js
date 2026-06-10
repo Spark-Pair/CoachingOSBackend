@@ -1,9 +1,18 @@
 const {
   checkForUpdate,
+  getCurrentVersion,
+  isInstallSupported,
   prepareAndLaunchUpdate,
 } = require('../services/updateService')
 
 let updateStarting = false
+
+function getVersion(_req, res) {
+  return res.json({
+    version: getCurrentVersion(),
+    installed: isInstallSupported(),
+  })
+}
 
 async function getUpdateStatus(_req, res) {
   const result = await checkForUpdate()
@@ -30,5 +39,6 @@ async function installUpdate(_req, res) {
 
 module.exports = {
   getUpdateStatus,
+  getVersion,
   installUpdate,
 }
