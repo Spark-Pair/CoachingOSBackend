@@ -31,6 +31,7 @@ for (const relativePath of [
   'frontend',
   'Start CoachingOS.bat',
   'Install License.bat',
+  'Enable Network Access.bat',
   'INSTALLATION GUIDE.txt',
 ]) {
   fs.cpSync(

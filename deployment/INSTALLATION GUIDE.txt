@@ -70,7 +70,7 @@ For a normal single-PC installation, keep:
 
 MONGO_URI=mongodb://127.0.0.1:27017/coachingos
 PORT=5000
-HOST=127.0.0.1
+HOST=0.0.0.0
 FRONTEND_DIR=frontend
 
 To use MongoDB Atlas instead, replace only MONGO_URI with the Atlas connection
@@ -120,6 +120,18 @@ Start CoachingOS.bat
 The application opens at:
 
 http://127.0.0.1:5000
+
+Other devices on the same network can open:
+
+http://CLIENT-PC-IP:5000
+
+For example:
+
+http://192.168.1.20:5000
+
+Windows Firewall must allow inbound TCP port 5000 from the local subnet.
+
+Run Enable Network Access.bat once as administrator to add the firewall rule.
 
 On first use, register the four-digit administrator PIN.
 

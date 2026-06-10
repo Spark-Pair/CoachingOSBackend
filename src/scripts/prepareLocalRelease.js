@@ -35,7 +35,7 @@ fs.cpSync(path.join(frontendRoot, 'dist'), frontendOutput, { recursive: true })
 
 run('npm.cmd', ['run', 'package:exe'], { cwd: root })
 
-for (const fileName of ['config.env.local.example', 'Start CoachingOS.bat', 'Install License.bat', 'INSTALLATION GUIDE.txt']) {
+for (const fileName of ['config.env.local.example', 'Start CoachingOS.bat', 'Install License.bat', 'Enable Network Access.bat', 'INSTALLATION GUIDE.txt']) {
   const targetName = fileName === 'config.env.local.example' ? 'config.env' : fileName
   fs.copyFileSync(path.join(root, 'deployment', fileName), path.join(releaseDirectory, targetName))
 }
