@@ -168,7 +168,19 @@ Start CoachingOS again.
 Do not edit license.json. Any modification invalidates its signature.
 
 
-9. TROUBLESHOOTING
+9. APPLICATION UPDATES
+----------------------
+When the PC is online, CoachingOS checks GitHub for updates after administrator
+login.
+
+Optional updates can be installed or postponed.
+Mandatory updates must be installed before the application can continue.
+
+Before installing, CoachingOS verifies the downloaded package and creates a
+database safety backup. The application closes and reopens automatically.
+
+
+10. TROUBLESHOOTING
 ------------------
 License is missing
 - Check C:\ProgramData\CoachingOS\license.json.
@@ -201,7 +213,7 @@ Page does not open
 - Check C:\CoachingOS\logs\server.log for the startup error.
 
 
-10. FULLY OFFLINE OPERATION
+11. FULLY OFFLINE OPERATION
 ---------------------------
 After MongoDB, the application folder, and license are installed, CoachingOS
 does not require internet access.

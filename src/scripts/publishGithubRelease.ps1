@@ -122,7 +122,8 @@ $metadata = [ordered]@{
   frontendCommit = $frontendCommit
   backendCommit = $backendCommit
 }
-$metadata | ConvertTo-Json | Set-Content -LiteralPath $metadataPath -Encoding utf8
+$utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($metadataPath, ($metadata | ConvertTo-Json), $utf8WithoutBom)
 
 if (-not $Notes.Trim()) {
   $Notes = "CoachingOS $Version update."

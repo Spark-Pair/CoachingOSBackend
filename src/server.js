@@ -16,6 +16,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes')
 const feeRoutes = require('./routes/feeRoutes')
 const reportRoutes = require('./routes/reportRoutes')
 const studentRoutes = require('./routes/studentRoutes')
+const updateRoutes = require('./routes/updateRoutes')
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -55,6 +56,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/fees', feeRoutes)
 app.use('/api/reports', reportRoutes)
 app.use('/api/students', studentRoutes)
+app.use('/api/updates', updateRoutes)
 
 const frontendDirectory = path.resolve(process.env.FRONTEND_DIR || path.join(process.cwd(), 'frontend'))
 const frontendIndex = path.join(frontendDirectory, 'index.html')

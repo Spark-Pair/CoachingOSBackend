@@ -82,6 +82,30 @@ The future automatic updater will require installation before continuing.
 The value is stored in the release's update.json file.
 
 
+AUTOMATIC UPDATE FLOW
+---------------------
+Starting with version 1.3.0, CoachingOS checks the latest GitHub release after
+the administrator logs in.
+
+Versions older than 1.3.0 do not contain the automatic checker. Install 1.3.0
+with the manual updater once. Releases after that can be detected and installed
+automatically.
+
+For an optional update:
+- The user can install it immediately.
+- The user can select Later and continue using the current version.
+
+For a mandatory update:
+- The update dialog cannot be closed.
+- The user must be online to download and install it.
+- Once a mandatory update has been seen online, CoachingOS remembers it if the
+  internet later becomes unavailable.
+
+During installation, CoachingOS downloads the release ZIP, verifies its SHA-256
+checksum, starts the updater, creates a database backup, installs the update,
+and reopens automatically.
+
+
 LATEST RELEASE LINKS
 --------------------
 Latest release page:

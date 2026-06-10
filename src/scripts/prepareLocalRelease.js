@@ -8,6 +8,7 @@ const workspace = path.resolve(root, '..')
 const frontendRoot = path.join(workspace, 'CoachingOS')
 const releaseDirectory = path.join(workspace, 'LocalInstallation')
 const frontendOutput = path.join(releaseDirectory, 'frontend')
+const version = process.env.COACHINGOS_VERSION || require('../../package.json').version
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -45,5 +46,9 @@ const envContents = fs.readFileSync(envPath, 'utf8').replace(
   crypto.randomBytes(48).toString('hex'),
 )
 fs.writeFileSync(envPath, envContents, 'utf8')
+fs.writeFileSync(path.join(releaseDirectory, 'version.json'), JSON.stringify({
+  version,
+  builtAt: new Date().toISOString(),
+}, null, 2))
 
 console.log(`Local installation package prepared: ${releaseDirectory}`)

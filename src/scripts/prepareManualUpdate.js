@@ -8,7 +8,7 @@ const workspace = path.resolve(root, '..')
 const releaseDirectory = path.join(workspace, 'LocalInstallation')
 const updateDirectory = path.join(workspace, 'ManualUpdate')
 const payloadDirectory = path.join(updateDirectory, 'update-package')
-const version = process.env.COACHINGOS_VERSION || '1.1.0'
+const version = process.env.COACHINGOS_VERSION || require('../../package.json').version
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
