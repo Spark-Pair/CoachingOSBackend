@@ -11,7 +11,10 @@
     "license:create": "node src/scripts/createLicense.js",
     "license:install": "node src/scripts/installLicense.js",
     "package:exe": "node src/scripts/buildExe.js",
-    "release:local": "node src/scripts/prepareLocalRelease.js"
+    "package:updater": "node src/scripts/buildUpdater.js",
+    "release:local": "node src/scripts/prepareLocalRelease.js",
+    "release:update": "node src/scripts/prepareManualUpdate.js",
+    "release:github": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File src/scripts/publishGithubRelease.ps1"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +22,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "bson": "^7.2.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",

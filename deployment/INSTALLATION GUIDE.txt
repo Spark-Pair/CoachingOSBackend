@@ -83,6 +83,13 @@ the Atlas Network Access list, or configure the appropriate Atlas access rule.
 The database user must have permission to read and write the coachingos
 database.
 
+If Atlas SRV DNS fails on a client PC, add the direct Atlas fallback values:
+
+MONGO_ATLAS_HOSTS=host-00-00.mongodb.net,host-00-01.mongodb.net,host-00-02.mongodb.net
+MONGO_ATLAS_REPLICA_SET=atlas-example-shard-0
+
+You can get these from the Atlas cluster DNS records or from the developer.
+
 
 4. INSTALL THE CUSTOMER LICENSE
 -------------------------------
@@ -128,17 +135,24 @@ Rename the shortcut to CoachingOS.
 
 7. BACKUP
 ---------
-Application data is stored in the local MongoDB database named coachingos.
+Open Settings > Backup and restore.
 
-Back up with:
+Download backup:
+- Select Download backup.
+- Keep the downloaded .coachingos-backup file in a secure location.
 
-mongodump --db coachingos --out C:\CoachingOS-Backup
+Restore backup:
+- Select Select backup.
+- Choose a .coachingos-backup file.
+- Confirm the restore.
 
-Restore with:
+Restore replaces the current database. Before replacing anything, CoachingOS
+automatically saves a safety backup in:
 
-mongorestore --drop --db coachingos C:\CoachingOS-Backup\coachingos
+C:\ProgramData\CoachingOS\Backups
 
-MongoDB Database Tools may need to be installed separately.
+The built-in backup works with both local MongoDB and MongoDB Atlas. MongoDB
+Database Tools are not required.
 
 Also retain a secure copy of the signed customer license.
 
@@ -184,6 +198,7 @@ MongoDB Atlas connection error
 Page does not open
 - Wait five seconds and open http://127.0.0.1:5000
 - Ensure only one CoachingOS.exe process is running.
+- Check C:\CoachingOS\logs\server.log for the startup error.
 
 
 10. FULLY OFFLINE OPERATION

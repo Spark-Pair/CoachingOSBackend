@@ -1,0 +1,37 @@
+COACHINGOS - MANUAL UPDATE
+==========================
+
+This updater is configured for the default installation:
+
+C:\CoachingOS
+
+1. Keep this complete ManualUpdate folder outside C:\CoachingOS.
+2. Close the CoachingOS browser tab.
+3. Double-click RUN UPDATE.bat.
+4. Keep the updater window open until it reports success.
+
+If Windows reports Access denied, right-click RUN UPDATE.bat and select
+Run as administrator.
+
+The updater will:
+
+- Stop CoachingOS.
+- Back up the configured local MongoDB or MongoDB Atlas database.
+- Preserve config.env, logs, customer license, and database data.
+- Install the new executable and frontend.
+- Start CoachingOS and check its health endpoint.
+- Restore the previous application files automatically if startup fails.
+
+Database backups are stored in:
+
+C:\ProgramData\CoachingOS\Backups
+
+Updater logs are stored in:
+
+C:\ProgramData\CoachingOS\Updates\updater.log
+
+To update a non-default installation, run this from Command Prompt:
+
+"RUN UPDATE.bat" "D:\Path\To\CoachingOS"
+
+Do not move CoachingOSUpdater.exe away from the update-package folder.

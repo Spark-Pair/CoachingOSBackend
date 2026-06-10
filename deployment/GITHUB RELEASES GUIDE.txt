@@ -1,0 +1,108 @@
+COACHINGOS - GITHUB RELEASES GUIDE
+==================================
+
+WHAT A GITHUB RELEASE IS
+------------------------
+A release is a named version of CoachingOS stored on GitHub.
+
+Each release has:
+- A version tag, such as v1.2.0.
+- Release notes.
+- The manual updater ZIP.
+- A SHA-256 checksum.
+- update.json for the future automatic updater.
+
+Releases are published here:
+
+https://github.com/Spark-Pair/CoachingOSBackend/releases
+
+
+ONE-TIME SETUP
+--------------
+1. Install GitHub CLI.
+2. Open PowerShell or Command Prompt.
+3. Run:
+
+gh auth login --web --git-protocol https
+
+4. Select GitHub.com if asked.
+5. Complete the browser sign-in.
+
+Never put a GitHub token in source code, config.env, or the updater.
+
+
+BEFORE EVERY RELEASE
+--------------------
+1. Test frontend and backend in development.
+2. Commit the frontend changes in C:\Software\CoachingOS\CoachingOS.
+3. Push the frontend main branch.
+4. Commit the backend changes in C:\Software\CoachingOS\CoachingOSBackend.
+5. Push the backend main branch.
+
+The publisher refuses to release uncommitted or unpushed code.
+
+For the current development changes, commit and push both repositories before
+running the publisher for the first time.
+
+
+PUBLISH A RELEASE
+-----------------
+Double-click:
+
+C:\Software\CoachingOS\CoachingOSBackend\deployment\PUBLISH GITHUB RELEASE.bat
+
+Enter:
+- Version: for example 1.2.0
+- Update type: optional or mandatory
+- Short release notes
+
+Review the displayed details. Type RELEASE when asked for final confirmation.
+
+The command builds the frontend and backend, creates the updater, verifies the
+repositories, creates a GitHub tag and release, and uploads all assets.
+
+
+VERSION NUMBERS
+---------------
+1.1.0 to 1.1.1 = bug fixes only
+1.1.0 to 1.2.0 = new backward-compatible features
+1.1.0 to 2.0.0 = major or incompatible changes
+
+Never reuse a published version number.
+
+
+OPTIONAL AND MANDATORY UPDATES
+------------------------------
+optional:
+The future automatic updater will allow the user to skip the update.
+
+mandatory:
+The future automatic updater will require installation before continuing.
+
+The value is stored in the release's update.json file.
+
+
+LATEST RELEASE LINKS
+--------------------
+Latest release page:
+
+https://github.com/Spark-Pair/CoachingOSBackend/releases/latest
+
+Latest update metadata:
+
+https://github.com/Spark-Pair/CoachingOSBackend/releases/latest/download/update.json
+
+
+IMPORTANT
+---------
+Both CoachingOS GitHub repositories are currently public. Source code and
+release downloads are visible to anyone.
+
+Do not upload:
+- config.env
+- Customer license files
+- Database backups
+- Private signing keys
+- Passwords or access tokens
+
+The release script does not include these files.
