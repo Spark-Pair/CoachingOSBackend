@@ -168,6 +168,7 @@ async function listClassStudents(req, res) {
           { name: { $regex: escapeRegex(search), $options: 'i' } },
           { rollNo: { $regex: escapeRegex(search), $options: 'i' } },
           { parentName: { $regex: escapeRegex(search), $options: 'i' } },
+          { group: { $regex: escapeRegex(search), $options: 'i' } },
         ],
       }] : []),
     ],

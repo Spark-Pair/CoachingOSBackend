@@ -6,6 +6,8 @@ const studentSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     parentName: { type: String, trim: true, required: true },
     phone: { type: String, trim: true, required: true },
+    dateOfBirth: { type: Date },
+    group: { type: String, trim: true },
     classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', index: true, required: true },
     className: { type: String, trim: true, required: true },
     monthlyFee: { type: Number, min: 0, required: true },

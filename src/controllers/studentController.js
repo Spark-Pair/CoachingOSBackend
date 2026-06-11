@@ -43,6 +43,7 @@ async function listStudents(req, res) {
         { rollNo: { $regex: escapeRegex(search), $options: 'i' } },
         { parentName: { $regex: escapeRegex(search), $options: 'i' } },
         { phone: { $regex: escapeRegex(search), $options: 'i' } },
+        { group: { $regex: escapeRegex(search), $options: 'i' } },
       ],
     } : {}),
     ...(classId && mongoose.isValidObjectId(classId) ? { classId } : {}),
@@ -79,7 +80,7 @@ async function listStudents(req, res) {
 async function listStudentOptions(_req, res) {
   const students = await Student.find({})
     .sort({ name: 1 })
-    .select('_id name parentName phone rollNo classId className monthlyFee joiningDate status')
+    .select('_id name parentName phone dateOfBirth group rollNo classId className monthlyFee joiningDate status')
     .lean()
 
   return res.json({
@@ -91,12 +92,14 @@ async function createStudent(req, res) {
   const name = String(req.body.name || '').trim()
   const parentName = String(req.body.parentName || '').trim()
   const phone = String(req.body.phone || '').trim()
+  const dateOfBirth = buildDate(req.body.dateOfBirth)
+  const group = String(req.body.group || '').trim()
   const rollNo = String(req.body.rollNo || '').trim()
   const classId = String(req.body.classId || '').trim()
   const monthlyFee = Number(req.body.monthlyFee)
   const joiningDate = buildDate(req.body.joiningDate)
 
-  if (!name || !parentName || !phone || !rollNo || !classId || !mongoose.isValidObjectId(classId) || !joiningDate || !Number.isFinite(monthlyFee)) {
+  if (!name || !parentName || !phone || !dateOfBirth || dateOfBirth > new Date() || !group || !rollNo || !classId || !mongoose.isValidObjectId(classId) || !joiningDate || !Number.isFinite(monthlyFee)) {
     return res.status(400).json({ message: 'All fields are required.' })
   }
 
@@ -113,6 +116,8 @@ async function createStudent(req, res) {
       name,
       parentName,
       phone,
+      dateOfBirth,
+      group,
       rollNo,
       classId: classItem._id,
       className: classItem.name,
@@ -140,12 +145,14 @@ async function updateStudent(req, res) {
   const name = String(req.body.name || '').trim()
   const parentName = String(req.body.parentName || '').trim()
   const phone = String(req.body.phone || '').trim()
+  const dateOfBirth = buildDate(req.body.dateOfBirth)
+  const group = String(req.body.group || '').trim()
   const rollNo = String(req.body.rollNo || '').trim()
   const classId = String(req.body.classId || '').trim()
   const monthlyFee = Number(req.body.monthlyFee)
   const joiningDate = buildDate(req.body.joiningDate)
 
-  if (!name || !parentName || !phone || !rollNo || !classId || !mongoose.isValidObjectId(classId) || !joiningDate || !Number.isFinite(monthlyFee)) {
+  if (!name || !parentName || !phone || !dateOfBirth || dateOfBirth > new Date() || !group || !rollNo || !classId || !mongoose.isValidObjectId(classId) || !joiningDate || !Number.isFinite(monthlyFee)) {
     return res.status(400).json({ message: 'All fields are required.' })
   }
 
@@ -161,6 +168,8 @@ async function updateStudent(req, res) {
         name,
         parentName,
         phone,
+        dateOfBirth,
+        group,
         rollNo,
         classId: classItem._id,
         className: classItem.name,

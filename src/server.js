@@ -1,4 +1,5 @@
 const fs = require('fs')
+const https = require('https')
 const path = require('path')
 const environmentPath = fs.existsSync(path.join(process.cwd(), '.env'))
   ? path.join(process.cwd(), '.env')
@@ -21,6 +22,8 @@ const updateRoutes = require('./routes/updateRoutes')
 const app = express()
 const port = process.env.PORT || 5000
 const host = process.env.HOST || '0.0.0.0'
+const httpsPfxPath = path.resolve(process.env.HTTPS_PFX_PATH || path.join(process.cwd(), 'certificates', 'coachingos.pfx'))
+const httpsEnabled = fs.existsSync(httpsPfxPath)
 const allowedOrigins = [
   ...(process.env.CLIENT_ORIGIN || '').split(',').map((origin) => origin.trim()),
   'http://127.0.0.1:5173',
@@ -78,8 +81,16 @@ app.use((err, _req, res, _next) => {
 
 connectDb()
   .then(() => {
-    app.listen(port, host, () => {
-      console.log(`CoachingOS API running on http://${host}:${port}`)
+    const server = httpsEnabled
+      ? https.createServer({
+        pfx: fs.readFileSync(httpsPfxPath),
+        passphrase: process.env.HTTPS_PFX_PASSWORD || 'CoachingOS-Local-HTTPS',
+      }, app)
+      : app
+
+    server.listen(port, host, () => {
+      const protocol = httpsEnabled ? 'https' : 'http'
+      console.log(`CoachingOS API running on ${protocol}://${host}:${port}`)
     })
   })
   .catch((error) => {

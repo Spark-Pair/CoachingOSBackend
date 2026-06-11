@@ -32,6 +32,8 @@ for (const relativePath of [
   'Start CoachingOS.bat',
   'Install License.bat',
   'Enable Network Access.bat',
+  'Enable HTTPS.bat',
+  'Enable HTTPS.ps1',
   'INSTALLATION GUIDE.txt',
 ]) {
   fs.cpSync(

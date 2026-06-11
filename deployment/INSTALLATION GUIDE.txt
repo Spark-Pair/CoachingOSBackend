@@ -8,6 +8,9 @@ CoachingOS\
   config.env
   Start CoachingOS.bat
   Install License.bat
+  Enable HTTPS.bat
+  Enable HTTPS.ps1
+  Enable Network Access.bat
   INSTALLATION GUIDE.txt
   frontend\
     index.html
@@ -51,6 +54,9 @@ C:\CoachingOS\
   config.env
   Start CoachingOS.bat
   Install License.bat
+  Enable HTTPS.bat
+  Enable HTTPS.ps1
+  Enable Network Access.bat
   INSTALLATION GUIDE.txt
   frontend\
     index.html
@@ -113,25 +119,33 @@ database or replacing C:\CoachingOS does not reset the expiry date.
 
 5. START THE APPLICATION
 ------------------------
-Double-click:
-
 Start CoachingOS.bat
+
+On the first start, approve the administrator prompt. CoachingOS automatically
+creates and trusts the local HTTPS certificate required for camera access.
+
+Also run Enable Network Access.bat once as administrator to allow other
+devices on the local network to connect.
 
 The application opens at:
 
-http://127.0.0.1:5000
+https://127.0.0.1:5000
 
 Other devices on the same network can open:
 
-http://CLIENT-PC-IP:5000
+https://CLIENT-PC-IP:5000
 
 For example:
 
-http://192.168.1.20:5000
+https://192.168.1.20:5000
 
 Windows Firewall must allow inbound TCP port 5000 from the local subnet.
 
-Run Enable Network Access.bat once as administrator to add the firewall rule.
+IMPORTANT FOR CAMERA ACCESS ON OTHER DEVICES:
+- Copy C:\CoachingOS\certificates\coachingos.crt to the device.
+- Install it as a trusted root/CA certificate on that device.
+- Restart the browser before opening CoachingOS.
+- The device must trust this certificate or its browser will block the camera.
 
 On first use, register the four-digit administrator PIN.
 
@@ -220,9 +234,17 @@ MongoDB Atlas connection error
 - If the password contains special characters, URL-encode them.
 
 Page does not open
-- Wait five seconds and open http://127.0.0.1:5000
+- Wait five seconds and open https://127.0.0.1:5000
 - Ensure only one CoachingOS.exe process is running.
 - Check C:\CoachingOS\logs\server.log for the startup error.
+
+HTTPS or camera does not work
+- Run Enable HTTPS.bat as administrator.
+- Restart CoachingOS after the certificate is created.
+- For another device, install certificates\coachingos.crt as a trusted
+  root/CA certificate on that device.
+- If the client's IP address changes, run Enable HTTPS.bat again so the new
+  address is added to the certificate.
 
 
 11. FULLY OFFLINE OPERATION

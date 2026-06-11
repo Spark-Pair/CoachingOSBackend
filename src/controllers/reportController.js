@@ -114,21 +114,23 @@ async function buildStudentWorkbook(query) {
     ...(Object.keys(joiningDate).length ? { joiningDate } : {}),
   }).sort({ className: 1, name: 1 }).lean()
 
-  addTitle(worksheet, 'Student Directory Report', 8)
-  addHeader(worksheet, ['Roll No', 'Student Name', 'Parent Name', 'Phone', 'Class', 'Monthly Fee', 'Joining Date', 'Status'])
+  addTitle(worksheet, 'Student Directory Report', 10)
+  addHeader(worksheet, ['Roll No', 'Student Name', 'Parent Name', 'Phone', 'Date of Birth', 'Class', 'Group', 'Monthly Fee', 'Joining Date', 'Status'])
   students.forEach((student) => {
     worksheet.addRow([
       student.rollNo,
       student.name,
       student.parentName,
       student.phone || '',
+      toInputDate(student.dateOfBirth),
       student.className,
+      student.group || '',
       Number(student.monthlyFee || 0),
       toInputDate(student.joiningDate),
       student.status,
     ])
   })
-  finishWorksheet(worksheet, [16, 26, 26, 18, 18, 14, 16, 14])
+  finishWorksheet(worksheet, [16, 26, 26, 18, 16, 18, 18, 14, 16, 14])
   return workbook
 }
 
@@ -164,12 +166,20 @@ async function buildDailyAttendanceWorkbook(type, query) {
   const workbook = new ExcelJS.Workbook()
   styleWorkbook(workbook)
   const worksheet = workbook.addWorksheet(type === 'present' ? 'Present Students' : 'Absentees')
-  addTitle(worksheet, `${type === 'present' ? 'Present Students' : 'Absentees'} - ${date}`, 5)
-  addHeader(worksheet, ['Student Name', 'Parent Name', 'Roll No', 'Class', 'Phone'])
+  addTitle(worksheet, `${type === 'present' ? 'Present Students' : 'Absentees'} - ${date}`, 7)
+  addHeader(worksheet, ['Student Name', 'Parent Name', 'Roll No', 'Class', 'Group', 'Phone', 'Date of Birth'])
   rows.forEach((student) => {
-    worksheet.addRow([student.name, student.parentName, student.rollNo, student.className, student.phone || ''])
+    worksheet.addRow([
+      student.name,
+      student.parentName,
+      student.rollNo,
+      student.className,
+      student.group || '',
+      student.phone || '',
+      toInputDate(student.dateOfBirth),
+    ])
   })
-  finishWorksheet(worksheet, [26, 26, 16, 18, 18])
+  finishWorksheet(worksheet, [26, 26, 16, 18, 18, 18, 16])
   return workbook
 }
 
@@ -217,14 +227,20 @@ async function buildStudentAttendanceWorkbook(query) {
   const workbook = new ExcelJS.Workbook()
   styleWorkbook(workbook)
   const worksheet = workbook.addWorksheet('Student Attendance')
-  addTitle(worksheet, `${student.name} Attendance Report`, 3)
-  addHeader(worksheet, ['Date', 'Status', 'Class'])
+  addTitle(worksheet, `${student.name} Attendance Report`, 5)
+  addHeader(worksheet, ['Date', 'Status', 'Class', 'Group', 'Date of Birth'])
   dates.forEach((date) => {
     const day = daysByDate.get(date)
     const record = day?.records.find((item) => item.studentId.toString() === student._id.toString())
-    worksheet.addRow([date, day?.dayOff ? 'Day Off' : record?.status || 'Absent', student.className])
+    worksheet.addRow([
+      date,
+      day?.dayOff ? 'Day Off' : record?.status || 'Absent',
+      student.className,
+      student.group || '',
+      toInputDate(student.dateOfBirth),
+    ])
   })
-  finishWorksheet(worksheet, [16, 16, 20])
+  finishWorksheet(worksheet, [16, 16, 20, 18, 16])
   return workbook
 }
 
@@ -300,8 +316,8 @@ async function buildStudentFeeLedgerWorkbook(query) {
   const workbook = new ExcelJS.Workbook()
   styleWorkbook(workbook)
   const worksheet = workbook.addWorksheet('Fee Ledger')
-  addTitle(worksheet, `${student.name} Fee Ledger`, 5)
-  addHeader(worksheet, ['Month', 'Status', 'Amount', 'Paid Date', 'Class'])
+  addTitle(worksheet, `${student.name} Fee Ledger`, 7)
+  addHeader(worksheet, ['Month', 'Status', 'Amount', 'Paid Date', 'Class', 'Group', 'Date of Birth'])
   months.forEach((month) => {
     const record = recordsByMonth.get(month)
     worksheet.addRow([
@@ -310,9 +326,11 @@ async function buildStudentFeeLedgerWorkbook(query) {
       Number(record?.amount ?? student.monthlyFee ?? 0),
       record ? toInputDate(record.paidDate) : '',
       record?.className || student.className,
+      student.group || '',
+      toInputDate(student.dateOfBirth),
     ])
   })
-  finishWorksheet(worksheet, [16, 14, 14, 16, 20])
+  finishWorksheet(worksheet, [16, 14, 14, 16, 20, 18, 16])
   return workbook
 }
 
@@ -344,22 +362,24 @@ async function buildMonthlyFeeWorkbook(query) {
   const workbook = new ExcelJS.Workbook()
   styleWorkbook(workbook)
   const worksheet = workbook.addWorksheet('Monthly Fees')
-  addTitle(worksheet, `Fee Report - ${month}`, 8)
-  addHeader(worksheet, ['Student Name', 'Parent Name', 'Phone', 'Roll No', 'Class', 'Status', 'Amount', 'Paid Date'])
+  addTitle(worksheet, `Fee Report - ${month}`, 10)
+  addHeader(worksheet, ['Student Name', 'Parent Name', 'Phone', 'Date of Birth', 'Roll No', 'Class', 'Group', 'Status', 'Amount', 'Paid Date'])
   students.forEach((student) => {
     const record = recordsByStudent.get(student._id.toString())
     worksheet.addRow([
       student.name,
       student.parentName,
       student.phone || '',
+      toInputDate(student.dateOfBirth),
       student.rollNo,
       student.className,
+      student.group || '',
       record ? 'Paid' : 'Unpaid',
       Number(record?.amount ?? student.monthlyFee ?? 0),
       record ? toInputDate(record.paidDate) : '',
     ])
   })
-  finishWorksheet(worksheet, [26, 26, 18, 16, 18, 14, 14, 16])
+  finishWorksheet(worksheet, [26, 26, 18, 16, 16, 18, 18, 14, 14, 16])
   return workbook
 }
 
@@ -371,8 +391,8 @@ async function buildUnpaidInstallmentsWorkbook() {
   const workbook = new ExcelJS.Workbook()
   styleWorkbook(workbook)
   const worksheet = workbook.addWorksheet('Unpaid Installments')
-  addTitle(worksheet, 'All Unpaid Installments Report', 8)
-  addHeader(worksheet, ['Student Name', 'Parent Name', 'Phone', 'Roll No', 'Class', 'Month', 'Amount Due', 'Student Status'])
+  addTitle(worksheet, 'All Unpaid Installments Report', 10)
+  addHeader(worksheet, ['Student Name', 'Parent Name', 'Phone', 'Date of Birth', 'Roll No', 'Class', 'Group', 'Month', 'Amount Due', 'Student Status'])
   students.forEach((student) => {
     const joiningMonth = toInputDate(student.joiningDate).slice(0, 7)
     monthValuesBetween(joiningMonth, currentMonthValue()).forEach((month) => {
@@ -381,8 +401,10 @@ async function buildUnpaidInstallmentsWorkbook() {
           student.name,
           student.parentName,
           student.phone || '',
+          toInputDate(student.dateOfBirth),
           student.rollNo,
           student.className,
+          student.group || '',
           month,
           Number(student.monthlyFee || 0),
           student.status,
@@ -390,7 +412,7 @@ async function buildUnpaidInstallmentsWorkbook() {
       }
     })
   })
-  finishWorksheet(worksheet, [26, 26, 18, 16, 18, 16, 14, 16])
+  finishWorksheet(worksheet, [26, 26, 18, 16, 16, 18, 18, 16, 14, 16])
   return workbook
 }
 

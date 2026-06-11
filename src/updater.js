@@ -17,6 +17,8 @@ const UPDATE_FILES = [
   'Start CoachingOS.bat',
   'Install License.bat',
   'Enable Network Access.bat',
+  'Enable HTTPS.bat',
+  'Enable HTTPS.ps1',
   'INSTALLATION GUIDE.txt',
   'version.json',
 ]
@@ -114,8 +116,12 @@ function startApplication(installDirectory) {
   fs.closeSync(logHandle)
 }
 
-function openApplication(port) {
-  const child = spawn('cmd.exe', ['/c', 'start', '', `http://127.0.0.1:${port}`], {
+function getApplicationProtocol(installDirectory) {
+  return fs.existsSync(path.join(installDirectory, 'certificates', 'coachingos.pfx')) ? 'https' : 'http'
+}
+
+function openApplication(port, protocol) {
+  const child = spawn('cmd.exe', ['/c', 'start', '', `${protocol}://127.0.0.1:${port}`], {
     detached: true,
     stdio: 'ignore',
     windowsHide: true,
@@ -127,9 +133,10 @@ function sleep(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
-async function waitForHealth(port, timeoutMs = Number(process.env.COACHINGOS_UPDATE_HEALTH_TIMEOUT || 60000)) {
+async function waitForHealth(port, protocol, timeoutMs = Number(process.env.COACHINGOS_UPDATE_HEALTH_TIMEOUT || 60000)) {
   const startedAt = Date.now()
-  const url = `http://127.0.0.1:${port}/api/health`
+  const url = `${protocol}://127.0.0.1:${port}/api/health`
+  if (protocol === 'https') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
   while (Date.now() - startedAt < timeoutMs) {
     try {
@@ -216,6 +223,7 @@ async function run() {
 
   Object.assign(process.env, parseEnvironmentFile(configPath))
   const port = Number(process.env.PORT || 5000)
+  const protocol = getApplicationProtocol(installDirectory)
 
   stopApplication()
 
@@ -237,13 +245,13 @@ async function run() {
     log('Starting the updated application...')
     startApplication(installDirectory)
 
-    if (!await waitForHealth(port)) {
+    if (!await waitForHealth(port, protocol)) {
       throw new Error(`The updated application did not become healthy on port ${port}`)
     }
 
     fs.rmSync(rollbackDirectory, { recursive: true, force: true })
     log(`CoachingOS ${manifest.version} was installed successfully.`)
-    openApplication(port)
+    openApplication(port, protocol)
     console.log('')
     console.log('Update complete. CoachingOS is running.')
   } catch (error) {
