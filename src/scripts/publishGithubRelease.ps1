@@ -19,13 +19,14 @@ $backendRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workspaceRoot = (Resolve-Path (Join-Path $backendRoot '..')).Path
 $frontendRoot = Join-Path $workspaceRoot 'CoachingOS'
 $manualUpdateDirectory = Join-Path $workspaceRoot 'ManualUpdate'
+$artifactsDirectory = Join-Path $workspaceRoot 'ReleaseArtifacts'
 $tag = "v$Version"
 $repository = 'Spark-Pair/CoachingOSBackend'
 $assetName = "CoachingOS-ManualUpdate-v$Version.zip"
-$assetPath = Join-Path $workspaceRoot $assetName
+$assetPath = Join-Path $artifactsDirectory $assetName
 $checksumPath = "$assetPath.sha256.txt"
-$metadataPath = Join-Path $workspaceRoot 'update.json'
-$notesPath = Join-Path $workspaceRoot "release-notes-v$Version.md"
+$metadataPath = Join-Path $artifactsDirectory 'update.json'
+$notesPath = Join-Path $artifactsDirectory "release-notes-v$Version.md"
 $ghCandidates = @(
   (Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1),
   (Join-Path $env:LOCALAPPDATA 'Programs\GitHub CLI\bin\gh.exe'),
@@ -100,6 +101,8 @@ $env:COACHINGOS_VERSION = $Version
 if ($LASTEXITCODE -ne 0) {
   throw 'Update package build failed.'
 }
+
+New-Item -ItemType Directory -Path $artifactsDirectory -Force | Out-Null
 
 if (Test-Path $assetPath) {
   Remove-Item -LiteralPath $assetPath -Force
