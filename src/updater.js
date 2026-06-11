@@ -120,6 +120,37 @@ function getApplicationProtocol(installDirectory) {
   return fs.existsSync(path.join(installDirectory, 'certificates', 'coachingos.pfx')) ? 'https' : 'http'
 }
 
+function tryEnableHttps(installDirectory) {
+  if (getApplicationProtocol(installDirectory) === 'https') return true
+
+  const setupPath = path.join(installDirectory, 'Enable HTTPS.bat')
+  if (!fs.existsSync(setupPath)) {
+    log('HTTPS setup was not found. The application will continue over HTTP.')
+    return false
+  }
+
+  log('HTTPS is not configured. Requesting administrator approval to create the local certificate...')
+  const escapedSetupPath = setupPath.replace(/'/g, "''")
+  const result = spawnSync('powershell.exe', [
+    '-NoProfile',
+    '-ExecutionPolicy',
+    'Bypass',
+    '-Command',
+    `$process = Start-Process -FilePath '${escapedSetupPath}' -ArgumentList '--no-pause' -Verb RunAs -Wait -PassThru; exit $process.ExitCode`,
+  ], {
+    stdio: 'inherit',
+    windowsHide: false,
+  })
+
+  if (result.status !== 0 || getApplicationProtocol(installDirectory) !== 'https') {
+    log('HTTPS setup was not completed. Run Enable HTTPS.bat as administrator before using the camera.')
+    return false
+  }
+
+  log('HTTPS certificate created successfully.')
+  return true
+}
+
 function openApplication(port, protocol) {
   const child = spawn('cmd.exe', ['/c', 'start', '', `${protocol}://127.0.0.1:${port}`], {
     detached: true,
@@ -223,7 +254,6 @@ async function run() {
 
   Object.assign(process.env, parseEnvironmentFile(configPath))
   const port = Number(process.env.PORT || 5000)
-  const protocol = getApplicationProtocol(installDirectory)
 
   stopApplication()
 
@@ -242,6 +272,8 @@ async function run() {
     rollbackReady = true
     log('Installing updated application files...')
     applyApplicationFiles(updateSource, installDirectory)
+    tryEnableHttps(installDirectory)
+    const protocol = getApplicationProtocol(installDirectory)
     log('Starting the updated application...')
     startApplication(installDirectory)
 
