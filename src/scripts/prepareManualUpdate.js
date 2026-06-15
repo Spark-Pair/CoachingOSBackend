@@ -34,6 +34,8 @@ for (const relativePath of [
   'Enable Network Access.bat',
   'Enable HTTPS.bat',
   'Enable HTTPS.ps1',
+  'Ensure Data Access.bat',
+  'Ensure Data Access.ps1',
   'INSTALLATION GUIDE.txt',
 ]) {
   fs.cpSync(

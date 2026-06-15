@@ -19,6 +19,8 @@ const UPDATE_FILES = [
   'Enable Network Access.bat',
   'Enable HTTPS.bat',
   'Enable HTTPS.ps1',
+  'Ensure Data Access.bat',
+  'Ensure Data Access.ps1',
   'INSTALLATION GUIDE.txt',
   'version.json',
 ]
@@ -151,6 +153,30 @@ function tryEnableHttps(installDirectory) {
   return true
 }
 
+function ensureDataAccess(installDirectory) {
+  const setupPath = path.join(installDirectory, 'Ensure Data Access.bat')
+  if (!fs.existsSync(setupPath)) {
+    log('Data access setup was not found.')
+    return false
+  }
+
+  log('Checking CoachingOS application data access...')
+  const result = spawnSync(setupPath, [], {
+    cwd: installDirectory,
+    stdio: 'inherit',
+    windowsHide: false,
+    shell: true,
+  })
+
+  if (result.status !== 0) {
+    log('Application data access was not repaired.')
+    return false
+  }
+
+  log('Application data access is ready.')
+  return true
+}
+
 function openApplication(port, protocol) {
   const child = spawn('cmd.exe', ['/c', 'start', '', `${protocol}://127.0.0.1:${port}`], {
     detached: true,
@@ -272,6 +298,9 @@ async function run() {
     rollbackReady = true
     log('Installing updated application files...')
     applyApplicationFiles(updateSource, installDirectory)
+    if (!ensureDataAccess(installDirectory)) {
+      throw new Error('CoachingOS could not access C:\\ProgramData\\CoachingOS')
+    }
     tryEnableHttps(installDirectory)
     const protocol = getApplicationProtocol(installDirectory)
     log('Starting the updated application...')

@@ -10,6 +10,8 @@ CoachingOS\
   Install License.bat
   Enable HTTPS.bat
   Enable HTTPS.ps1
+  Ensure Data Access.bat
+  Ensure Data Access.ps1
   Enable Network Access.bat
   INSTALLATION GUIDE.txt
   frontend\
@@ -56,6 +58,8 @@ C:\CoachingOS\
   Install License.bat
   Enable HTTPS.bat
   Enable HTTPS.ps1
+  Ensure Data Access.bat
+  Ensure Data Access.ps1
   Enable Network Access.bat
   INSTALLATION GUIDE.txt
   frontend\
