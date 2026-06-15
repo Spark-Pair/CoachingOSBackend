@@ -1,6 +1,7 @@
 const express = require('express')
 const {
   createClass,
+  deleteClass,
   listClasses,
   listClassOptions,
   listClassStudents,
@@ -18,5 +19,6 @@ router.post('/', createClass)
 router.get('/:id/students', listClassStudents)
 router.put('/:id', updateClass)
 router.patch('/:id/status', updateClassStatus)
+router.delete('/:id', deleteClass)
 
 module.exports = router

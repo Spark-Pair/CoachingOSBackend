@@ -6,6 +6,9 @@ const PUBLIC_KEY = require('../config/licensePublicKey')
 
 const LICENSE_FILE_NAME = 'license.json'
 const STATE_FILE_NAME = 'license-state.json'
+const WINDOWS_RENAME_RETRY_CODES = new Set(['EACCES', 'EBUSY', 'EPERM'])
+const WINDOWS_RENAME_RETRY_DELAYS_MS = [25, 50, 100, 200, 400]
+const sleepBuffer = new Int32Array(new SharedArrayBuffer(4))
 
 function getLicenseDirectory() {
   if (process.env.COACHINGOS_LICENSE_DIR) {
@@ -37,11 +40,43 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
 }
 
+function sleepSync(milliseconds) {
+  Atomics.wait(sleepBuffer, 0, 0, milliseconds)
+}
+
 function writeJson(filePath, value) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true })
-  const temporaryPath = `${filePath}.tmp`
-  fs.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
-  fs.renameSync(temporaryPath, filePath)
+  const contents = `${JSON.stringify(value, null, 2)}\n`
+  const temporaryPath = `${filePath}.${process.pid}.${crypto.randomUUID()}.tmp`
+  fs.writeFileSync(temporaryPath, contents, 'utf8')
+
+  try {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        fs.renameSync(temporaryPath, filePath)
+        return
+      } catch (error) {
+        const retryDelay = WINDOWS_RENAME_RETRY_DELAYS_MS[attempt]
+        if (process.platform !== 'win32' || !WINDOWS_RENAME_RETRY_CODES.has(error.code) || retryDelay === undefined) {
+          throw error
+        }
+        sleepSync(retryDelay)
+      }
+    }
+  } catch (renameError) {
+    try {
+      // Windows can allow writing a file while temporarily denying replacement.
+      fs.writeFileSync(filePath, contents, 'utf8')
+    } catch {
+      throw renameError
+    }
+  } finally {
+    try {
+      fs.rmSync(temporaryPath, { force: true })
+    } catch {
+      // A stale temporary file is harmless and can be cleaned up later.
+    }
+  }
 }
 
 function isValidDate(value) {

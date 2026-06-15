@@ -146,6 +146,27 @@ async function updateClassStatus(req, res) {
   return res.json({ ...classItem.toObject(), id: classItem._id })
 }
 
+async function deleteClass(req, res) {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({ message: 'Class not found.' })
+  }
+
+  const classItem = await Class.findById(req.params.id).select('_id name').lean()
+  if (!classItem) {
+    return res.status(404).json({ message: 'Class not found.' })
+  }
+
+  const studentCount = await studentCountForClass(classItem)
+  if (studentCount > 0) {
+    return res.status(409).json({
+      message: `This class cannot be deleted because ${studentCount} student${studentCount === 1 ? ' is' : 's are'} assigned to it.`,
+    })
+  }
+
+  await Class.deleteOne({ _id: classItem._id })
+  return res.json({ id: classItem._id })
+}
+
 async function listClassStudents(req, res) {
   if (!mongoose.isValidObjectId(req.params.id)) {
     return res.status(404).json({ message: 'Class not found.' })
@@ -200,6 +221,7 @@ async function listClassOptions(_req, res) {
 
 module.exports = {
   createClass,
+  deleteClass,
   listClasses,
   listClassOptions,
   listClassStudents,

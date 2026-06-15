@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
+const AttendanceDay = require('../models/AttendanceDay')
 const Class = require('../models/Class')
+const FeeRecord = require('../models/FeeRecord')
 const Student = require('../models/Student')
 
 const STUDENT_PAGE_SIZE = 30
@@ -216,8 +218,39 @@ async function updateStudentStatus(req, res) {
   return res.json({ ...student.toObject(), id: student._id })
 }
 
+async function deleteStudent(req, res) {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({ message: 'Student not found.' })
+  }
+
+  const student = await Student.findById(req.params.id).select('_id').lean()
+  if (!student) {
+    return res.status(404).json({ message: 'Student not found.' })
+  }
+
+  const [feeRecordCount, attendanceRecordCount] = await Promise.all([
+    FeeRecord.countDocuments({ studentId: student._id }),
+    AttendanceDay.countDocuments({ 'records.studentId': student._id }),
+  ])
+
+  if (feeRecordCount || attendanceRecordCount) {
+    const dependencies = [
+      feeRecordCount ? `${feeRecordCount} fee record${feeRecordCount === 1 ? '' : 's'}` : '',
+      attendanceRecordCount ? `${attendanceRecordCount} attendance day${attendanceRecordCount === 1 ? '' : 's'}` : '',
+    ].filter(Boolean).join(' and ')
+
+    return res.status(409).json({
+      message: `This student cannot be deleted because they have ${dependencies}.`,
+    })
+  }
+
+  await Student.deleteOne({ _id: student._id })
+  return res.json({ id: student._id })
+}
+
 module.exports = {
   createStudent,
+  deleteStudent,
   listStudentOptions,
   listStudents,
   updateStudent,

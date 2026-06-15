@@ -164,6 +164,22 @@ async function updateAttendanceRecord(req, res) {
   return res.json({ studentId, status })
 }
 
+async function deleteAttendance(req, res) {
+  const date = String(req.query.date || '')
+  const classId = String(req.query.classId || '')
+  const validationMessage = validateAttendanceQuery(date, classId)
+  if (validationMessage) {
+    return res.status(400).json({ message: validationMessage })
+  }
+
+  const attendanceDay = await AttendanceDay.findOneAndDelete({ date, classId })
+  if (!attendanceDay) {
+    return res.status(404).json({ message: 'Attendance record not found.' })
+  }
+
+  return res.json({ id: attendanceDay._id, date, classId })
+}
+
 async function scanAttendance(req, res) {
   const code = String(req.body.code || '').trim()
   const date = String(req.body.date || todayInputValue())
@@ -223,6 +239,7 @@ async function scanAttendance(req, res) {
 }
 
 module.exports = {
+  deleteAttendance,
   getAttendance,
   scanAttendance,
   setDayOff,
