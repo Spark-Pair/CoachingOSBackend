@@ -21810,7 +21810,7 @@ var require_application = __commonJS({
     var finalhandler = require_finalhandler();
     var debug = require_src()("express:application");
     var View = require_view();
-    var http = require("node:http");
+    var http2 = require("node:http");
     var methods = require_utils3().methods;
     var compileETag = require_utils3().compileETag;
     var compileQueryParser = require_utils3().compileQueryParser;
@@ -22043,7 +22043,7 @@ var require_application = __commonJS({
       tryRender(view, renderOptions, done);
     };
     app2.listen = function listen() {
-      var server = http.createServer(this);
+      var server = http2.createServer(this);
       var args = slice.call(arguments);
       if (typeof args[args.length - 1] === "function") {
         var done = args[args.length - 1] = once(args[args.length - 1]);
@@ -22818,12 +22818,12 @@ var require_request = __commonJS({
     var accepts = require_accepts();
     var isIP = require("node:net").isIP;
     var typeis = require_type_is();
-    var http = require("node:http");
+    var http2 = require("node:http");
     var fresh = require_fresh();
     var parseRange = require_range_parser();
     var parse2 = require_parseurl();
     var proxyaddr = require_proxy_addr();
-    var req = Object.create(http.IncomingMessage.prototype);
+    var req = Object.create(http2.IncomingMessage.prototype);
     module2.exports = req;
     req.get = req.header = function header(name) {
       if (!name) {
@@ -23844,7 +23844,7 @@ var require_response = __commonJS({
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
-    var http = require("node:http");
+    var http2 = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
     var path2 = require("node:path");
@@ -23860,7 +23860,7 @@ var require_response = __commonJS({
     var resolve = path2.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
-    var res = Object.create(http.ServerResponse.prototype);
+    var res = Object.create(http2.ServerResponse.prototype);
     module2.exports = res;
     res.status = function status(code) {
       if (!Number.isInteger(code)) {
@@ -30591,7 +30591,7 @@ var require_utils4 = __commonJS({
     exports2.addAbortListener = addAbortListener;
     exports2.abortable = abortable;
     var fs_1 = require("fs");
-    var http = require("http");
+    var http2 = require("http");
     var process2 = require("process");
     var timers_1 = require("timers");
     var bson_1 = require_bson2();
@@ -31249,7 +31249,7 @@ var require_utils4 = __commonJS({
     function get(url, options = {}) {
       return new Promise((resolve, reject) => {
         let timeoutId;
-        const request = http.get(url, options, (response) => {
+        const request = http2.get(url, options, (response) => {
           response.setEncoding("utf8");
           let body = "";
           response.on("data", (chunk) => body += chunk);
@@ -89724,6 +89724,21 @@ var require_AttendanceDay = __commonJS({
           type: String,
           enum: ["admin", "teacher"],
           default: "admin"
+        },
+        source: {
+          type: String,
+          trim: true
+        },
+        ip: {
+          type: String,
+          trim: true
+        },
+        userAgent: {
+          type: String,
+          trim: true
+        },
+        scannedAt: {
+          type: Date
         }
       },
       { _id: false }
@@ -89783,13 +89798,32 @@ var require_Class = __commonJS({
   }
 });
 
+// src/utils/attendanceToken.js
+var require_attendanceToken = __commonJS({
+  "src/utils/attendanceToken.js"(exports2, module2) {
+    var crypto5 = require("crypto");
+    function generateAttendanceToken() {
+      return crypto5.randomBytes(24).toString("base64url");
+    }
+    module2.exports = {
+      generateAttendanceToken
+    };
+  }
+});
+
 // src/models/Student.js
 var require_Student = __commonJS({
   "src/models/Student.js"(exports2, module2) {
     var mongoose = require_mongoose2();
+    var { generateAttendanceToken } = require_attendanceToken();
     var studentSchema = new mongoose.Schema(
       {
         rollNo: { type: String, trim: true, required: true },
+        attendanceToken: {
+          type: String,
+          trim: true,
+          default: generateAttendanceToken
+        },
         name: { type: String, required: true, trim: true },
         parentName: { type: String, trim: true, required: true },
         phone: { type: String, trim: true, required: true },
@@ -89809,7 +89843,31 @@ var require_Student = __commonJS({
     );
     studentSchema.index({ classId: 1, name: 1 });
     studentSchema.index({ rollNo: 1 }, { unique: true });
+    studentSchema.index({ attendanceToken: 1 }, { unique: true, sparse: true });
     module2.exports = mongoose.model("Student", studentSchema);
+  }
+});
+
+// src/utils/date.js
+var require_date3 = __commonJS({
+  "src/utils/date.js"(exports2, module2) {
+    function getPakistanDateKey(date = /* @__PURE__ */ new Date()) {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Karachi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(date);
+    }
+    function isValidDateKey(value) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
+      const date = /* @__PURE__ */ new Date(`${value}T00:00:00.000Z`);
+      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+    }
+    module2.exports = {
+      getPakistanDateKey,
+      isValidDateKey
+    };
   }
 });
 
@@ -89820,14 +89878,36 @@ var require_attendanceController = __commonJS({
     var AttendanceDay = require_AttendanceDay();
     var Class = require_Class();
     var Student = require_Student();
+    var { getPakistanDateKey, isValidDateKey } = require_date3();
     var validStatuses = ["Present", "Absent", "Leave"];
     function isValidDateInput(value) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))) return false;
-      const date = /* @__PURE__ */ new Date(`${value}T00:00:00.000Z`);
-      return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+      return isValidDateKey(value);
     }
     function todayInputValue() {
-      return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+      return getPakistanDateKey();
+    }
+    function parseScanPayload(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return { token: "", legacyCode: "" };
+      try {
+        const payload = JSON.parse(raw);
+        if (payload?.type === "coachingos_attendance") {
+          return { token: String(payload.token || "").trim(), legacyCode: "" };
+        }
+        if (payload?.token) {
+          return { token: String(payload.token || "").trim(), legacyCode: "" };
+        }
+      } catch {
+      }
+      return { token: raw, legacyCode: raw };
+    }
+    function getRequestAudit(req) {
+      return {
+        source: req.auth ? "admin_scan" : "public_scan",
+        ip: String(req.ip || req.socket?.remoteAddress || "").slice(0, 120),
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+        scannedAt: /* @__PURE__ */ new Date()
+      };
     }
     function validateAttendanceQuery(date, classId) {
       if (!isValidDateInput(date)) {
@@ -89973,12 +90053,14 @@ var require_attendanceController = __commonJS({
       return res.json({ id: attendanceDay._id, date, classId });
     }
     async function scanAttendance(req, res) {
-      const code = String(req.body.code || "").trim();
+      const code = String(req.body.code || req.body.token || "").trim();
+      const { token, legacyCode } = parseScanPayload(code);
       const date = String(req.body.date || todayInputValue());
       const classId = String(req.body.classId || "").trim();
       const markedBy = req.auth ? "admin" : "teacher";
       const effectiveDate = markedBy === "teacher" ? todayInputValue() : date;
-      if (!code) {
+      const allowLegacyRollNo = process.env.ALLOW_LEGACY_ROLLNO_SCAN === "true";
+      if (!token) {
         return res.status(400).json({ message: "Scan code is required." });
       }
       if (!isValidDateInput(effectiveDate) || effectiveDate > todayInputValue()) {
@@ -89986,7 +90068,10 @@ var require_attendanceController = __commonJS({
       }
       const studentFilter = {
         status: "Active",
-        $or: [{ rollNo: code }, ...mongoose.isValidObjectId(code) ? [{ _id: code }] : []],
+        $or: [
+          { attendanceToken: token },
+          ...allowLegacyRollNo ? [{ rollNo: legacyCode }, ...mongoose.isValidObjectId(legacyCode) ? [{ _id: legacyCode }] : []] : []
+        ],
         ...classId && mongoose.isValidObjectId(classId) ? { classId } : {}
       };
       const student = await Student.findOne(studentFilter).lean();
@@ -90007,12 +90092,22 @@ var require_attendanceController = __commonJS({
       }
       const existingRecord = attendanceDay.records.find((record) => record.studentId.toString() === student._id.toString());
       const alreadyMarked = Boolean(existingRecord?.status === "Present");
+      const audit = getRequestAudit(req);
       if (existingRecord) {
         existingRecord.status = "Present";
         existingRecord.markedAt = /* @__PURE__ */ new Date();
         existingRecord.markedBy = markedBy;
+        existingRecord.source = audit.source;
+        existingRecord.ip = audit.ip;
+        existingRecord.userAgent = audit.userAgent;
+        existingRecord.scannedAt = audit.scannedAt;
       } else {
-        attendanceDay.records.push({ studentId: student._id, status: "Present", markedBy });
+        attendanceDay.records.push({
+          studentId: student._id,
+          status: "Present",
+          markedBy,
+          ...audit
+        });
       }
       await attendanceDay.save();
       return res.json({
@@ -94077,6 +94172,30 @@ var require_license = __commonJS({
   }
 });
 
+// src/middleware/publicScanRateLimit.js
+var require_publicScanRateLimit = __commonJS({
+  "src/middleware/publicScanRateLimit.js"(exports2, module2) {
+    var windowMs = Number(process.env.PUBLIC_SCAN_RATE_LIMIT_WINDOW_MS || 6e4);
+    var maxRequests = Number(process.env.PUBLIC_SCAN_RATE_LIMIT_MAX || 90);
+    var buckets = /* @__PURE__ */ new Map();
+    function publicScanRateLimit(req, res, next) {
+      const now = Date.now();
+      const key = `${req.ip || req.socket?.remoteAddress || "unknown"}:${req.headers["user-agent"] || ""}`;
+      const current = buckets.get(key);
+      if (!current || current.resetAt <= now) {
+        buckets.set(key, { count: 1, resetAt: now + windowMs });
+        return next();
+      }
+      current.count += 1;
+      if (current.count > maxRequests) {
+        return res.status(429).json({ message: "Too many scan attempts. Please wait and try again." });
+      }
+      return next();
+    }
+    module2.exports = publicScanRateLimit;
+  }
+});
+
 // src/routes/attendanceRoutes.js
 var require_attendanceRoutes = __commonJS({
   "src/routes/attendanceRoutes.js"(exports2, module2) {
@@ -94090,8 +94209,9 @@ var require_attendanceRoutes = __commonJS({
     } = require_attendanceController();
     var requireAuth = require_auth();
     var requireLicense = require_license();
+    var publicScanRateLimit = require_publicScanRateLimit();
     var router = express2.Router();
-    router.post("/scan-public", requireLicense, scanAttendance);
+    router.post("/scan-public", requireLicense, publicScanRateLimit, scanAttendance);
     router.post("/scan", requireAuth, scanAttendance);
     router.get("/", requireAuth, getAttendance);
     router.delete("/", requireAuth, deleteAttendance);
@@ -161599,7 +161719,7 @@ var require_studentController = __commonJS({
       });
     }
     async function listStudentOptions(_req, res) {
-      const students = await Student.find({}).sort({ name: 1 }).select("_id name parentName phone dateOfBirth group rollNo classId className monthlyFee joiningDate status").lean();
+      const students = await Student.find({}).sort({ name: 1 }).select("_id name parentName phone dateOfBirth group rollNo attendanceToken classId className monthlyFee joiningDate status").lean();
       return res.json({
         data: students.map((student) => ({ ...student, id: student._id }))
       });
@@ -161729,17 +161849,20 @@ var require_studentController = __commonJS({
         FeeRecord.countDocuments({ studentId: student._id }),
         AttendanceDay.countDocuments({ "records.studentId": student._id })
       ]);
-      if (feeRecordCount || attendanceRecordCount) {
-        const dependencies = [
-          feeRecordCount ? `${feeRecordCount} fee record${feeRecordCount === 1 ? "" : "s"}` : "",
-          attendanceRecordCount ? `${attendanceRecordCount} attendance day${attendanceRecordCount === 1 ? "" : "s"}` : ""
-        ].filter(Boolean).join(" and ");
+      if (feeRecordCount) {
         return res.status(409).json({
-          message: `This student cannot be deleted because they have ${dependencies}.`
+          message: `This student cannot be deleted because they have ${feeRecordCount} fee record${feeRecordCount === 1 ? "" : "s"}.`
         });
       }
+      if (attendanceRecordCount) {
+        await AttendanceDay.updateMany(
+          { "records.studentId": student._id },
+          { $pull: { records: { studentId: student._id } } }
+        );
+        await AttendanceDay.deleteMany({ dayOff: false, records: { $size: 0 } });
+      }
       await Student.deleteOne({ _id: student._id });
-      return res.json({ id: student._id });
+      return res.json({ id: student._id, deletedAttendanceDays: attendanceRecordCount });
     }
     module2.exports = {
       createStudent,
@@ -162090,14 +162213,62 @@ var require_updateRoutes = __commonJS({
   }
 });
 
+// src/services/attendanceTokenBackfillService.js
+var require_attendanceTokenBackfillService = __commonJS({
+  "src/services/attendanceTokenBackfillService.js"(exports2, module2) {
+    var Student = require_Student();
+    var { generateAttendanceToken } = require_attendanceToken();
+    var missingTokenFilter = {
+      $or: [
+        { attendanceToken: { $exists: false } },
+        { attendanceToken: null },
+        { attendanceToken: "" }
+      ]
+    };
+    async function assignMissingAttendanceToken(studentId) {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        try {
+          const result = await Student.updateOne(
+            { _id: studentId, ...missingTokenFilter },
+            { $set: { attendanceToken: generateAttendanceToken() } }
+          );
+          return result.modifiedCount;
+        } catch (error) {
+          if (error.code !== 11e3 || attempt === 4) throw error;
+        }
+      }
+      return 0;
+    }
+    async function backfillMissingAttendanceTokens2() {
+      const students = await Student.find(missingTokenFilter).select("_id").lean();
+      let updated = 0;
+      for (const student of students) {
+        updated += await assignMissingAttendanceToken(student._id);
+      }
+      const remainingMissing = await Student.countDocuments(missingTokenFilter);
+      const total = await Student.countDocuments({});
+      return {
+        checked: total,
+        updated,
+        remainingMissing
+      };
+    }
+    module2.exports = {
+      backfillMissingAttendanceTokens: backfillMissingAttendanceTokens2,
+      missingTokenFilter
+    };
+  }
+});
+
 // src/server.js
 var fs = require("fs");
-var https = require("https");
 var path = require("path");
 var environmentPath = fs.existsSync(path.join(process.cwd(), ".env")) ? path.join(process.cwd(), ".env") : path.join(process.cwd(), "config.env");
 require_main().config({ path: environmentPath });
 var cors = require_lib();
 var express = require_express2();
+var http = require("http");
+var https = require("https");
 var connectDb = require_db3();
 var attendanceRoutes = require_attendanceRoutes();
 var authRoutes = require_authRoutes();
@@ -162108,18 +162279,55 @@ var feeRoutes = require_feeRoutes();
 var reportRoutes = require_reportRoutes();
 var studentRoutes = require_studentRoutes();
 var updateRoutes = require_updateRoutes();
+var { backfillMissingAttendanceTokens } = require_attendanceTokenBackfillService();
 var app = express();
-var port = process.env.PORT || 5e3;
+var port = Number(process.env.BACKEND_PORT || process.env.PORT || 5e3);
 var host = process.env.HOST || "0.0.0.0";
-var httpsPfxPath = path.resolve(process.env.HTTPS_PFX_PATH || path.join(process.cwd(), "certificates", "coachingos.pfx"));
-var httpsEnabled = fs.existsSync(httpsPfxPath);
+var publicHost = process.env.PUBLIC_HOST || "127.0.0.1";
+var publicDomain = process.env.PUBLIC_DOMAIN || "";
+var frontendPort = Number(process.env.FRONTEND_PORT || 5173);
+function readBooleanEnv(name, fallback = false) {
+  const value = String(process.env[name] || "").trim().toLowerCase();
+  if (!value) return fallback;
+  return ["1", "true", "yes", "on"].includes(value);
+}
+function resolveOptionalPath(filePath) {
+  if (!filePath) return "";
+  return path.isAbsolute(filePath) ? filePath : path.resolve(process.cwd(), filePath);
+}
+function getHttpsOptions() {
+  const pfxPath = resolveOptionalPath(process.env.HTTPS_PFX_PATH);
+  if (!pfxPath) {
+    throw new Error("HTTPS_ENABLED=true but HTTPS_PFX_PATH is not set.");
+  }
+  if (!fs.existsSync(pfxPath)) {
+    throw new Error(`HTTPS_ENABLED=true but PFX certificate was not found: ${pfxPath}`);
+  }
+  try {
+    return {
+      pfx: fs.readFileSync(pfxPath),
+      passphrase: process.env.HTTPS_PFX_PASSWORD || void 0
+    };
+  } catch (error) {
+    throw new Error(`HTTPS certificate could not be loaded: ${error.message}`);
+  }
+}
+function buildOriginList(name, ports) {
+  if (!name) return [];
+  return ports.flatMap((originPort) => [
+    `https://${name}:${originPort}`,
+    `http://${name}:${originPort}`
+  ]);
+}
 var allowedOrigins = [
-  ...(process.env.CLIENT_ORIGIN || "").split(",").map((origin) => origin.trim()),
-  "http://127.0.0.1:5173",
-  "https://127.0.0.1:5173",
+  ...(process.env.CLIENT_ORIGIN || "").split(",").map((origin) => origin.trim()).filter(Boolean),
   "http://localhost:5173",
-  "https://localhost:5173"
-].filter(Boolean);
+  "http://127.0.0.1:5173",
+  "https://localhost:5173",
+  "https://127.0.0.1:5173",
+  ...buildOriginList(publicHost, [frontendPort, port]),
+  ...buildOriginList(publicDomain, [frontendPort, port])
+];
 var localDevOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2})(?::\d{2,5})?$/;
 app.use(cors({
   origin(origin, callback) {
@@ -162128,12 +162336,24 @@ app.use(cors({
       callback(null, true);
       return;
     }
-    callback(new Error("Not allowed by CORS"));
-  }
+    callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  credentials: true
 }));
-app.use(express.json());
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.use(express.json({ limit: "10mb" }));
+app.get("/api/health", (req, res) => {
+  const protocol = req.secure ? "https" : "http";
+  res.json({
+    status: "ok",
+    app: "CoachingOS",
+    protocol,
+    host,
+    publicHost,
+    publicDomain,
+    port,
+    httpsEnabled: req.secure,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/attendance", attendanceRoutes);
@@ -162144,7 +162364,9 @@ app.use("/api/fees", feeRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/updates", updateRoutes);
-var frontendDirectory = path.resolve(process.env.FRONTEND_DIR || path.join(process.cwd(), "frontend"));
+var frontendDirectory = path.resolve(
+  process.env.FRONTEND_DIR || path.join(process.cwd(), "frontend")
+);
 var frontendIndex = path.join(frontendDirectory, "index.html");
 if (fs.existsSync(frontendIndex)) {
   app.use(express.static(frontendDirectory));
@@ -162157,16 +162379,55 @@ if (fs.existsSync(frontendIndex)) {
 }
 app.use((err, _req, res, _next) => {
   console.error(err);
-  res.status(500).json({ message: "Server error" });
+  res.status(500).json({
+    message: "Server error",
+    error: process.env.NODE_ENV === "production" ? void 0 : err.message
+  });
 });
-connectDb().then(() => {
-  const server = httpsEnabled ? https.createServer({
-    pfx: fs.readFileSync(httpsPfxPath),
-    passphrase: process.env.HTTPS_PFX_PASSWORD || "CoachingOS-Local-HTTPS"
-  }, app) : app;
+connectDb().then(async () => {
+  const tokenBackfill = await backfillMissingAttendanceTokens();
+  if (tokenBackfill.updated || tokenBackfill.remainingMissing) {
+    console.log(
+      `Attendance token startup backfill: checked=${tokenBackfill.checked}, added=${tokenBackfill.updated}, remainingMissing=${tokenBackfill.remainingMissing}`
+    );
+  }
+  const httpsEnabled = readBooleanEnv("HTTPS_ENABLED", false);
+  const fallbackToHttp = readBooleanEnv("HTTPS_FALLBACK_TO_HTTP", true);
+  let protocol = "http";
+  let server = http.createServer(app);
+  if (httpsEnabled) {
+    try {
+      const httpsOptions = getHttpsOptions();
+      protocol = "https";
+      server = https.createServer(httpsOptions, app);
+    } catch (error) {
+      if (!fallbackToHttp) {
+        throw error;
+      }
+      console.warn(error.message);
+      console.warn("HTTPS_FALLBACK_TO_HTTP=true, so CoachingOS is starting over HTTP.");
+    }
+  }
   server.listen(port, host, () => {
-    const protocol = httpsEnabled ? "https" : "http";
-    console.log(`CoachingOS API running on ${protocol}://${host}:${port}`);
+    console.log(`CoachingOS running on ${protocol}://${host}:${port}`);
+    console.log(`Protocol actually used: ${protocol}`);
+    console.log(`Local admin URL: ${protocol}://127.0.0.1:${port}/dashboard`);
+    console.log(`Local teacher scan URL: ${protocol}://127.0.0.1:${port}/scan`);
+    console.log(`LAN admin URL: ${protocol}://${publicHost}:${port}/dashboard`);
+    console.log(`LAN teacher scan URL: ${protocol}://${publicHost}:${port}/scan`);
+    if (publicDomain) {
+      console.log(`Domain admin URL: ${protocol}://${publicDomain}:${port}/dashboard`);
+      console.log(`Domain teacher scan URL: ${protocol}://${publicDomain}:${port}/scan`);
+    }
+    console.log(`Health URL: ${protocol}://${publicDomain || publicHost}:${port}/api/health`);
+    if (protocol === "https") {
+      console.warn("CoachingOS is running over HTTPS for camera support.");
+      console.warn("Browsers may still show a warning if the certificate is not trusted on the device.");
+    } else {
+      console.warn("CoachingOS is running in HTTP LAN mode.");
+      console.warn('Mobile browsers may show "Not secure" and may block camera/PWA features on HTTP LAN URLs.');
+    }
+    console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
   });
 }).catch((error) => {
   console.error("Failed to start server:", error.message);

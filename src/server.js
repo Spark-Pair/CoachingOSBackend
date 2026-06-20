@@ -22,6 +22,7 @@ const feeRoutes = require('./routes/feeRoutes')
 const reportRoutes = require('./routes/reportRoutes')
 const studentRoutes = require('./routes/studentRoutes')
 const updateRoutes = require('./routes/updateRoutes')
+const { backfillMissingAttendanceTokens } = require('./services/attendanceTokenBackfillService')
 
 const app = express()
 
@@ -157,7 +158,14 @@ app.use((err, _req, res, _next) => {
 })
 
 connectDb()
-  .then(() => {
+  .then(async () => {
+    const tokenBackfill = await backfillMissingAttendanceTokens()
+    if (tokenBackfill.updated || tokenBackfill.remainingMissing) {
+      console.log(
+        `Attendance token startup backfill: checked=${tokenBackfill.checked}, added=${tokenBackfill.updated}, remainingMissing=${tokenBackfill.remainingMissing}`,
+      )
+    }
+
     const httpsEnabled = readBooleanEnv('HTTPS_ENABLED', false)
     const fallbackToHttp = readBooleanEnv('HTTPS_FALLBACK_TO_HTTP', true)
     let protocol = 'http'
