@@ -8,10 +8,11 @@ const {
 } = require('../controllers/attendanceController')
 const requireAuth = require('../middleware/auth')
 const requireLicense = require('../middleware/license')
+const publicScanRateLimit = require('../middleware/publicScanRateLimit')
 
 const router = express.Router()
 
-router.post('/scan-public', requireLicense, scanAttendance)
+router.post('/scan-public', requireLicense, publicScanRateLimit, scanAttendance)
 router.post('/scan', requireAuth, scanAttendance)
 router.get('/', requireAuth, getAttendance)
 router.delete('/', requireAuth, deleteAttendance)

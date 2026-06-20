@@ -118,41 +118,6 @@ function startApplication(installDirectory) {
   fs.closeSync(logHandle)
 }
 
-function getApplicationProtocol(installDirectory) {
-  return fs.existsSync(path.join(installDirectory, 'certificates', 'coachingos.pfx')) ? 'https' : 'http'
-}
-
-function tryEnableHttps(installDirectory) {
-  if (getApplicationProtocol(installDirectory) === 'https') return true
-
-  const setupPath = path.join(installDirectory, 'Enable HTTPS.bat')
-  if (!fs.existsSync(setupPath)) {
-    log('HTTPS setup was not found. The application will continue over HTTP.')
-    return false
-  }
-
-  log('HTTPS is not configured. Requesting administrator approval to create the local certificate...')
-  const escapedSetupPath = setupPath.replace(/'/g, "''")
-  const result = spawnSync('powershell.exe', [
-    '-NoProfile',
-    '-ExecutionPolicy',
-    'Bypass',
-    '-Command',
-    `$process = Start-Process -FilePath '${escapedSetupPath}' -ArgumentList '--no-pause' -Verb RunAs -Wait -PassThru; exit $process.ExitCode`,
-  ], {
-    stdio: 'inherit',
-    windowsHide: false,
-  })
-
-  if (result.status !== 0 || getApplicationProtocol(installDirectory) !== 'https') {
-    log('HTTPS setup was not completed. Run Enable HTTPS.bat as administrator before using the camera.')
-    return false
-  }
-
-  log('HTTPS certificate created successfully.')
-  return true
-}
-
 function ensureDataAccess(installDirectory) {
   const setupPath = path.join(installDirectory, 'Ensure Data Access.bat')
   if (!fs.existsSync(setupPath)) {
@@ -301,8 +266,7 @@ async function run() {
     if (!ensureDataAccess(installDirectory)) {
       throw new Error('CoachingOS could not access C:\\ProgramData\\CoachingOS')
     }
-    tryEnableHttps(installDirectory)
-    const protocol = getApplicationProtocol(installDirectory)
+    const protocol = 'http'
     log('Starting the updated application...')
     startApplication(installDirectory)
 

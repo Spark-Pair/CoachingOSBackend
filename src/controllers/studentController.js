@@ -82,7 +82,7 @@ async function listStudents(req, res) {
 async function listStudentOptions(_req, res) {
   const students = await Student.find({})
     .sort({ name: 1 })
-    .select('_id name parentName phone dateOfBirth group rollNo classId className monthlyFee joiningDate status')
+    .select('_id name parentName phone dateOfBirth group rollNo attendanceToken classId className monthlyFee joiningDate status')
     .lean()
 
   return res.json({
@@ -233,19 +233,22 @@ async function deleteStudent(req, res) {
     AttendanceDay.countDocuments({ 'records.studentId': student._id }),
   ])
 
-  if (feeRecordCount || attendanceRecordCount) {
-    const dependencies = [
-      feeRecordCount ? `${feeRecordCount} fee record${feeRecordCount === 1 ? '' : 's'}` : '',
-      attendanceRecordCount ? `${attendanceRecordCount} attendance day${attendanceRecordCount === 1 ? '' : 's'}` : '',
-    ].filter(Boolean).join(' and ')
-
+  if (feeRecordCount) {
     return res.status(409).json({
-      message: `This student cannot be deleted because they have ${dependencies}.`,
+      message: `This student cannot be deleted because they have ${feeRecordCount} fee record${feeRecordCount === 1 ? '' : 's'}.`,
     })
   }
 
+  if (attendanceRecordCount) {
+    await AttendanceDay.updateMany(
+      { 'records.studentId': student._id },
+      { $pull: { records: { studentId: student._id } } },
+    )
+    await AttendanceDay.deleteMany({ dayOff: false, records: { $size: 0 } })
+  }
+
   await Student.deleteOne({ _id: student._id })
-  return res.json({ id: student._id })
+  return res.json({ id: student._id, deletedAttendanceDays: attendanceRecordCount })
 }
 
 module.exports = {

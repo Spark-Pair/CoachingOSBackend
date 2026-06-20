@@ -8,8 +8,6 @@ CoachingOS\
   config.env
   Start CoachingOS.bat
   Install License.bat
-  Enable HTTPS.bat
-  Enable HTTPS.ps1
   Ensure Data Access.bat
   Ensure Data Access.ps1
   Enable Network Access.bat
@@ -56,8 +54,6 @@ C:\CoachingOS\
   config.env
   Start CoachingOS.bat
   Install License.bat
-  Enable HTTPS.bat
-  Enable HTTPS.ps1
   Ensure Data Access.bat
   Ensure Data Access.ps1
   Enable Network Access.bat
@@ -125,13 +121,13 @@ database or replacing C:\CoachingOS does not reset the expiry date.
 ------------------------
 Start CoachingOS.bat
 
-On the first start, approve the administrator prompt. CoachingOS automatically
-creates and trusts the local HTTPS certificate required for camera access.
+On the first start, approve the administrator prompt if Windows asks for local
+application data access.
 
-Also run Enable Network Access.bat once as administrator to allow other
-devices on the local network to connect.
+Also run Enable Network Access.bat once as administrator to allow other devices
+on the local network to connect.
 
-The application opens at:
+The application opens on the server PC at:
 
 https://127.0.0.1:5000
 
@@ -139,17 +135,14 @@ Other devices on the same network can open:
 
 https://CLIENT-PC-IP:5000
 
-For example:
+Example:
 
 https://192.168.1.20:5000
 
-Windows Firewall must allow inbound TCP port 5000 from the local subnet.
+HTTPS uses a local certificate, so browsers may show "Not secure" / Advanced warning unless the certificate is trusted.
 
 IMPORTANT FOR CAMERA ACCESS ON OTHER DEVICES:
-- Copy C:\CoachingOS\certificates\coachingos.crt to the device.
-- Install it as a trusted root/CA certificate on that device.
-- Restart the browser before opening CoachingOS.
-- The device must trust this certificate or its browser will block the camera.
+Camera requires HTTPS. CoachingOS starts HTTPS for camera support. If the browser still refuses camera, the local certificate must be trusted on that device or a public SSL certificate must be used.
 
 On first use, register the four-digit administrator PIN.
 
@@ -242,13 +235,10 @@ Page does not open
 - Ensure only one CoachingOS.exe process is running.
 - Check C:\CoachingOS\logs\server.log for the startup error.
 
-HTTPS or camera does not work
-- Run Enable HTTPS.bat as administrator.
-- Restart CoachingOS after the certificate is created.
-- For another device, install certificates\coachingos.crt as a trusted
-  root/CA certificate on that device.
-- If the client's IP address changes, run Enable HTTPS.bat again so the new
-  address is added to the certificate.
+Teacher mobile camera does not work
+- Confirm phone and PC are on the same WiFi/LAN.
+- Confirm Enable Network Access.bat was run as administrator.
+- Use the HTTPS URL first. If the browser still refuses camera because the certificate is untrusted, trust the certificate on that device or use a public SSL certificate.
 
 
 11. FULLY OFFLINE OPERATION

@@ -21,6 +21,21 @@ const attendanceRecordSchema = new mongoose.Schema(
       enum: ['admin', 'teacher'],
       default: 'admin',
     },
+    source: {
+      type: String,
+      trim: true,
+    },
+    ip: {
+      type: String,
+      trim: true,
+    },
+    userAgent: {
+      type: String,
+      trim: true,
+    },
+    scannedAt: {
+      type: Date,
+    },
   },
   { _id: false },
 )

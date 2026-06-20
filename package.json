@@ -10,6 +10,7 @@
     "license:keys": "node src/scripts/generateLicenseKeys.js",
     "license:create": "node src/scripts/createLicense.js",
     "license:install": "node src/scripts/installLicense.js",
+    "tokens:backfill": "node src/scripts/backfillAttendanceTokens.js",
     "package:exe": "node src/scripts/buildExe.js",
     "package:updater": "node src/scripts/buildUpdater.js",
     "release:local": "node src/scripts/prepareLocalRelease.js",

@@ -2,17 +2,44 @@ const mongoose = require('mongoose')
 const AttendanceDay = require('../models/AttendanceDay')
 const Class = require('../models/Class')
 const Student = require('../models/Student')
+const { getPakistanDateKey, isValidDateKey } = require('../utils/date')
 
 const validStatuses = ['Present', 'Absent', 'Leave']
 
 function isValidDateInput(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false
-  const date = new Date(`${value}T00:00:00.000Z`)
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+  return isValidDateKey(value)
 }
 
 function todayInputValue() {
-  return new Date().toISOString().slice(0, 10)
+  return getPakistanDateKey()
+}
+
+function parseScanPayload(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return { token: '', legacyCode: '' }
+
+  try {
+    const payload = JSON.parse(raw)
+    if (payload?.type === 'coachingos_attendance') {
+      return { token: String(payload.token || '').trim(), legacyCode: '' }
+    }
+    if (payload?.token) {
+      return { token: String(payload.token || '').trim(), legacyCode: '' }
+    }
+  } catch {
+    // Plain tokens are also accepted for scanner compatibility.
+  }
+
+  return { token: raw, legacyCode: raw }
+}
+
+function getRequestAudit(req) {
+  return {
+    source: req.auth ? 'admin_scan' : 'public_scan',
+    ip: String(req.ip || req.socket?.remoteAddress || '').slice(0, 120),
+    userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
+    scannedAt: new Date(),
+  }
 }
 
 function validateAttendanceQuery(date, classId) {
@@ -181,13 +208,15 @@ async function deleteAttendance(req, res) {
 }
 
 async function scanAttendance(req, res) {
-  const code = String(req.body.code || '').trim()
+  const code = String(req.body.code || req.body.token || '').trim()
+  const { token, legacyCode } = parseScanPayload(code)
   const date = String(req.body.date || todayInputValue())
   const classId = String(req.body.classId || '').trim()
   const markedBy = req.auth ? 'admin' : 'teacher'
   const effectiveDate = markedBy === 'teacher' ? todayInputValue() : date
+  const allowLegacyRollNo = process.env.ALLOW_LEGACY_ROLLNO_SCAN === 'true'
 
-  if (!code) {
+  if (!token) {
     return res.status(400).json({ message: 'Scan code is required.' })
   }
   if (!isValidDateInput(effectiveDate) || effectiveDate > todayInputValue()) {
@@ -196,7 +225,10 @@ async function scanAttendance(req, res) {
 
   const studentFilter = {
     status: 'Active',
-    $or: [{ rollNo: code }, ...(mongoose.isValidObjectId(code) ? [{ _id: code }] : [])],
+    $or: [
+      { attendanceToken: token },
+      ...(allowLegacyRollNo ? [{ rollNo: legacyCode }, ...(mongoose.isValidObjectId(legacyCode) ? [{ _id: legacyCode }] : [])] : []),
+    ],
     ...(classId && mongoose.isValidObjectId(classId) ? { classId } : {}),
   }
   const student = await Student.findOne(studentFilter).lean()
@@ -220,12 +252,22 @@ async function scanAttendance(req, res) {
 
   const existingRecord = attendanceDay.records.find((record) => record.studentId.toString() === student._id.toString())
   const alreadyMarked = Boolean(existingRecord?.status === 'Present')
+  const audit = getRequestAudit(req)
   if (existingRecord) {
     existingRecord.status = 'Present'
     existingRecord.markedAt = new Date()
     existingRecord.markedBy = markedBy
+    existingRecord.source = audit.source
+    existingRecord.ip = audit.ip
+    existingRecord.userAgent = audit.userAgent
+    existingRecord.scannedAt = audit.scannedAt
   } else {
-    attendanceDay.records.push({ studentId: student._id, status: 'Present', markedBy })
+    attendanceDay.records.push({
+      studentId: student._id,
+      status: 'Present',
+      markedBy,
+      ...audit,
+    })
   }
   await attendanceDay.save()
 
