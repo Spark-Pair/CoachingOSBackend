@@ -21810,7 +21810,7 @@ var require_application = __commonJS({
     var finalhandler = require_finalhandler();
     var debug = require_src()("express:application");
     var View = require_view();
-    var http = require("node:http");
+    var http2 = require("node:http");
     var methods = require_utils3().methods;
     var compileETag = require_utils3().compileETag;
     var compileQueryParser = require_utils3().compileQueryParser;
@@ -22043,7 +22043,7 @@ var require_application = __commonJS({
       tryRender(view, renderOptions, done);
     };
     app2.listen = function listen() {
-      var server = http.createServer(this);
+      var server = http2.createServer(this);
       var args = slice.call(arguments);
       if (typeof args[args.length - 1] === "function") {
         var done = args[args.length - 1] = once(args[args.length - 1]);
@@ -22818,12 +22818,12 @@ var require_request = __commonJS({
     var accepts = require_accepts();
     var isIP = require("node:net").isIP;
     var typeis = require_type_is();
-    var http = require("node:http");
+    var http2 = require("node:http");
     var fresh = require_fresh();
     var parseRange = require_range_parser();
     var parse2 = require_parseurl();
     var proxyaddr = require_proxy_addr();
-    var req = Object.create(http.IncomingMessage.prototype);
+    var req = Object.create(http2.IncomingMessage.prototype);
     module2.exports = req;
     req.get = req.header = function header(name) {
       if (!name) {
@@ -23844,7 +23844,7 @@ var require_response = __commonJS({
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
-    var http = require("node:http");
+    var http2 = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
     var path2 = require("node:path");
@@ -23860,7 +23860,7 @@ var require_response = __commonJS({
     var resolve = path2.resolve;
     var vary = require_vary();
     var { Buffer: Buffer2 } = require("node:buffer");
-    var res = Object.create(http.ServerResponse.prototype);
+    var res = Object.create(http2.ServerResponse.prototype);
     module2.exports = res;
     res.status = function status(code) {
       if (!Number.isInteger(code)) {
@@ -30591,7 +30591,7 @@ var require_utils4 = __commonJS({
     exports2.addAbortListener = addAbortListener;
     exports2.abortable = abortable;
     var fs_1 = require("fs");
-    var http = require("http");
+    var http2 = require("http");
     var process2 = require("process");
     var timers_1 = require("timers");
     var bson_1 = require_bson2();
@@ -31249,7 +31249,7 @@ var require_utils4 = __commonJS({
     function get(url, options = {}) {
       return new Promise((resolve, reject) => {
         let timeoutId;
-        const request = http.get(url, options, (response) => {
+        const request = http2.get(url, options, (response) => {
           response.setEncoding("utf8");
           let body = "";
           response.on("data", (chunk) => body += chunk);

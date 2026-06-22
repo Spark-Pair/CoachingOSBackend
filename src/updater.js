@@ -126,11 +126,10 @@ function ensureDataAccess(installDirectory) {
   }
 
   log('Checking CoachingOS application data access...')
-  const result = spawnSync(setupPath, [], {
+  const result = spawnSync('cmd.exe', ['/d', '/s', '/c', 'call', setupPath], {
     cwd: installDirectory,
     stdio: 'inherit',
     windowsHide: false,
-    shell: true,
   })
 
   if (result.status !== 0) {
