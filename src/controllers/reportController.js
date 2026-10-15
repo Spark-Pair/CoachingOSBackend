@@ -244,6 +244,59 @@ async function buildStudentAttendanceWorkbook(query) {
   return workbook
 }
 
+async function buildAttendanceRangeWorkbook(query) {
+  const dateFrom = String(query.dateFrom || '')
+  const dateTo = String(query.dateTo || '')
+  if (!isValidDateInput(dateFrom) || !isValidDateInput(dateTo) || dateFrom > dateTo || dateTo > todayInputValue()) {
+    const error = new Error('A valid date range up to today is required.')
+    error.status = 400
+    throw error
+  }
+
+  const classIds = parseClassIds(query.classIds)
+  const classFilter = classIds.length ? { classId: { $in: classIds } } : {}
+  const [students, attendanceDays] = await Promise.all([
+    Student.find({
+      status: 'Active',
+      joiningDate: { $lte: buildDate(dateTo, true) },
+      ...classFilter,
+    }).sort({ className: 1, name: 1 }).lean(),
+    AttendanceDay.find({
+      date: { $gte: dateFrom, $lte: dateTo },
+      ...classFilter,
+    }).lean(),
+  ])
+
+  const daysByClassAndDate = new Map(
+    attendanceDays.map((day) => [`${day.classId}:${day.date}`, day]),
+  )
+  const dates = dateValuesBetween(dateFrom, dateTo)
+  const workbook = new ExcelJS.Workbook()
+  styleWorkbook(workbook)
+  const worksheet = workbook.addWorksheet('Attendance Range')
+  addTitle(worksheet, `Students Attendance Report - ${dateFrom} to ${dateTo}`, 7)
+  addHeader(worksheet, ['Date', 'Student Name', 'Parent Name', 'Roll No', 'Class', 'Group', 'Status'])
+
+  dates.forEach((date) => {
+    students.forEach((student) => {
+      if (date < toInputDate(student.joiningDate)) return
+      const day = daysByClassAndDate.get(`${student.classId}:${date}`)
+      const record = day?.records.find((item) => item.studentId.toString() === student._id.toString())
+      worksheet.addRow([
+        date,
+        student.name,
+        student.parentName,
+        student.rollNo,
+        student.className,
+        student.group || '',
+        day?.dayOff ? 'Day Off' : record?.status || 'Absent',
+      ])
+    })
+  })
+  finishWorksheet(worksheet, [16, 26, 26, 16, 20, 18, 16])
+  return workbook
+}
+
 async function buildClassesWorkbook() {
   const [classes, studentCounts] = await Promise.all([
     Class.find({}).sort({ name: 1 }).lean(),
@@ -434,14 +487,15 @@ async function downloadStudentReport(req, res) {
 
 async function downloadAttendanceReport(req, res) {
   const type = String(req.params.type || '').trim()
-  if (!['absentees', 'present', 'student-attendance'].includes(type)) {
+  if (!['absentees', 'present', 'student-attendance', 'attendance-range'].includes(type)) {
     return res.status(404).json({ message: 'Report not found.' })
   }
 
   try {
-    const workbook = type === 'student-attendance'
-      ? await buildStudentAttendanceWorkbook(req.query)
-      : await buildDailyAttendanceWorkbook(type, req.query)
+    let workbook
+    if (type === 'student-attendance') workbook = await buildStudentAttendanceWorkbook(req.query)
+    if (type === 'attendance-range') workbook = await buildAttendanceRangeWorkbook(req.query)
+    if (['absentees', 'present'].includes(type)) workbook = await buildDailyAttendanceWorkbook(type, req.query)
     return sendWorkbook(res, workbook, `${type}-${todayInputValue()}.xlsx`)
   } catch (error) {
     if (error.status) return res.status(error.status).json({ message: error.message })
