@@ -10,7 +10,8 @@ const bundlePath = path.join(buildDirectory, 'backend-bundle.cjs')
 const blobPath = path.join(buildDirectory, 'coachingos-sea.blob')
 const seaConfigPath = path.join(buildDirectory, 'sea-config.json')
 const executablePath = path.join(releaseDirectory, 'CoachingOS.exe')
-const postjectPath = path.join(root, 'node_modules', '.bin', 'postject.cmd')
+// const postjectPath = path.join(root, 'node_modules', '.bin', 'postject.cmd')
+const postjectPath = require.resolve('postject/dist/cli.js')
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -51,7 +52,8 @@ fs.writeFileSync(seaConfigPath, JSON.stringify({
 
 run(process.execPath, ['--experimental-sea-config', seaConfigPath])
 fs.copyFileSync(process.execPath, executablePath)
-run(postjectPath, [
+// run(postjectPath, [
+run(process.execPath, [postjectPath,
   executablePath,
   'NODE_SEA_BLOB',
   blobPath,
